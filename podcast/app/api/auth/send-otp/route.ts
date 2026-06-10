@@ -17,18 +17,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Normalize so access keys consistently to one account regardless of casing
   const email = body.data.email.trim().toLowerCase()
 
+  let code: string
   try {
     await cleanupExpiredOtps(email)
-    const code = generateOtp()
+    code = generateOtp()
     await storeOtp(email, code)
-
-    // Fire-and-forget: don't make the user wait on Brevo's API. The OTP is
-    // already stored, so verification works the moment the email arrives.
-    sendOtpEmail(email, code).catch((err) => {
-      logger.error({ err }, 'Failed to send OTP email')
-    })
-
-    return NextResponse.json({ success: true })
   } catch (err) {
     if (err instanceof Error && err.message === 'RATE_LIMIT') {
       return NextResponse.json(
@@ -39,4 +32,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     logger.error({ err }, 'send-otp failed')
     return NextResponse.json({ error: 'Failed to send OTP' }, { status: 500 })
   }
+
+  // Await the send so the serverless function stays alive until Brevo responds.
+  // A fire-and-forget promise gets frozen when the function returns on Vercel,
+  // so the email would never actually go out. If Brevo fails, surface a real
+  // error instead of a fake success — the client shows "Failed to send code".
+  try {
+    await sendOtpEmail(email, code)
+  } catch (err) {
+    logger.error({ err }, 'Failed to send OTP email')
+    return NextResponse.json(
+      { error: 'Could not send the verification email. Please try again.' },
+      { status: 502 }
+    )
+  }
+
+  return NextResponse.json({ success: true })
 }
