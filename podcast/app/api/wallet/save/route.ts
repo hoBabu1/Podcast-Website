@@ -10,6 +10,15 @@ const BodySchema = z.object({
 })
 
 export async function POST(req: Request): Promise<NextResponse> {
+  try {
+    return await handleSave(req)
+  } catch (err) {
+    console.error('[wallet/save] unexpected error:', err)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
+}
+
+async function handleSave(req: Request): Promise<NextResponse> {
   const session = await getSession(req)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

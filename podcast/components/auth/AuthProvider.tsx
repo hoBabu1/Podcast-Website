@@ -6,6 +6,7 @@ import type { ServerAuthState } from '@/lib/auth/serverAuth'
 export interface AuthUser {
   email: string
   userId: string
+  name: string
 }
 
 export interface AuthContextValue {

@@ -39,11 +39,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // User + role lookups are independent (both keyed on email), so run them in
     // parallel — one round trip of latency instead of two on the login path.
     const [usersRes, roleRes] = await Promise.all([
-      supabase.from('users').select('id').eq('email', email).limit(1),
+      supabase.from('users').select('id, name').eq('email', email).limit(1),
       supabase.from('user_roles').select('role').eq('email', email).limit(1),
     ])
 
-    const existingUser = (usersRes.data as Pick<UserRow, 'id'>[] | null)?.[0]
+    const existingUser = (usersRes.data as Pick<UserRow, 'id' | 'name'>[] | null)?.[0]
 
     if (!existingUser) {
       return NextResponse.json({ verified: true, isNewUser: true })
@@ -51,7 +51,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const role = (roleRes.data as Pick<UserRoleRow, 'role'>[] | null)?.[0]?.role ?? null
 
-    const token = await createSession(email, existingUser.id, role === 'owner' ? 'owner' : null)
+    const token = await createSession(
+      email,
+      existingUser.id,
+      role === 'owner' ? 'owner' : null,
+      existingUser.name
+    )
     const res = NextResponse.json({ verified: true, isNewUser: false })
     res.headers.set('Set-Cookie', makeSessionCookie(token))
     return res

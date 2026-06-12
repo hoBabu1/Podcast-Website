@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE, getSession } from '@/lib/auth/session'
-import { SignOutButton } from './SignOutButton'
+import { UserMenu } from './UserMenu'
 import { WalletButton } from '@/components/wallet/WalletButton'
 
 export async function Navbar() {
@@ -31,7 +31,7 @@ export async function Navbar() {
             href="#invest"
             className="text-brand-body hover:text-brand-heading text-sm transition-colors hidden sm:block"
           >
-            Invest
+            AI Vaults
           </Link>
 
           <WalletButton />
@@ -46,8 +46,7 @@ export async function Navbar() {
                   Dashboard
                 </Link>
               )}
-              <span className="text-brand-muted text-sm hidden sm:block">{session.email}</span>
-              <SignOutButton />
+              <UserMenu name={session.name} email={session.email} />
             </>
           ) : (
             <Link

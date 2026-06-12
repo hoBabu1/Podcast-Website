@@ -1307,3 +1307,57 @@ This is a good example of a real engineering trade-off: the "faster" version was
 We added `next-nprogress-bar` — a thin (2px) amber bar that slides across the top of the screen during page navigation, GitHub-style.
 
 Why it helps: when you click a link to another page, there's a short moment where the server is preparing the next page and *nothing visibly changes yet*. Without feedback, users often click again, thinking it didn't register. The progress bar fills that gap — the instant you click, the bar starts moving, confirming "your click worked, the next page is loading." It's the same psychology as the skeletons: a small, immediate signal that the app is responsive turns dead air into reassurance. It lives in a Client Component (`ProgressBar.tsx`) because it has to listen to the router, and the root layout is server-rendered.
+
+---
+
+## Chunk 10 — The finishing line: developer section, analytics, cleanup & QA
+
+### What was built
+
+The last chunk is less about new machinery and more about **getting the project ready for real people to use it**. Three things:
+
+1. A **"Build with DefiLords" section** at the bottom of the homepage — a small block inviting developers to contribute (GitHub) and investors to join (AI Vaults). Two buttons, both open in a new tab. Visually it sits on a *slightly* lighter charcoal (`#1a1a15`) than the rest of the page, so your eye registers it as a distinct "footer-ish" zone without any harsh divider.
+2. **Analytics tracking** wired into every page.
+3. A round of **pre-launch cleanup** and a **QA pass**.
+
+---
+
+### What analytics tracking actually does
+
+We added a tiny script (Contentsquare, the company that now owns Hotjar) that loads on every page. You give it a **Site ID** (ours is `872924`) and from then on it quietly records *how people use the site* — which pages they visit, where they click, how far they scroll, where they hesitate or drop off. Some tools also build **heatmaps** (a colour overlay showing where clicks cluster) and **session recordings** (an anonymised replay of a visitor's mouse movements).
+
+Why bother? Because you can't improve what you can't see. The owner might *think* the "Pay $50" button is obvious — analytics shows whether people actually find it, or whether they scroll past and leave. It turns guesses about user behaviour into data.
+
+Three details about *how* we added it, each one deliberate:
+
+- **`next/script` with `strategy="afterInteractive"`.** A normal `<script>` tag in the page can *block* the browser — the page can't finish drawing until the script downloads and runs. `afterInteractive` tells Next.js: "load this *after* the page is already usable." Analytics is never urgent enough to make a visitor wait, so it loads last. The page feels fast; the tracking still happens.
+- **The Site ID comes from an environment variable** (`NEXT_PUBLIC_HOTJAR_ID`), not typed into the code. Same principle as every other config value in this project: settings live in `.env`, not hardcoded. A bonus: if that variable is empty (say, in a local dev setup), the script simply doesn't render — no tracking noise during development.
+- **It carries the CSP "nonce."** This site has a strict **Content-Security-Policy** — a browser-enforced rule that says "only run scripts I explicitly trust," which is what stops an attacker from injecting malicious JavaScript. In production the policy uses a per-request random token called a **nonce**: every script the server trusts is stamped with that turn's token, and the browser refuses to run any script without it. So our analytics script has to carry the nonce too, or the browser would (correctly) block it. We read the nonce the middleware generated and pass it to the script. Security stays strict *and* the analytics still loads.
+
+(Note: we never used `dangerouslySetInnerHTML` — React's "I promise this raw HTML is safe" escape hatch — which the project bans. `next/script` accepts the loader code as normal children instead, which is the safe, idiomatic way.)
+
+---
+
+### What a QA checklist is, and why it matters
+
+**QA** stands for **Quality Assurance**. A QA checklist is simply a written list of *every* thing the app is supposed to do, which you walk through one by one and tick off — "does this actually work?" — before you ship.
+
+Ours had 25 items: homepage loads, each session card shows the right price and state, login works, wallet connects, payment unlocks the right session, the admin dashboard shows real numbers, non-owners get bounced out, the site works on a narrow phone screen, and so on.
+
+Why it matters: software has a lot of *paths* through it, and it's very easy to fix one thing and accidentally break another you weren't looking at. Without a checklist you test the thing you just changed, declare victory, and miss that login now redirects to the wrong place. The checklist forces you to verify the **whole** experience, not just your latest edit. It's the difference between "it worked on my machine when I tried it once" and "I confirmed every flow a real user will touch."
+
+An honest part of QA is being clear about **what you could and couldn't verify**. Some of our checks ran automatically (the page returns the right content, protected pages redirect logged-out visitors, the build compiles, 101 automated tests pass). Others — a real OTP email landing in a real inbox, a real wallet popping up, a real testnet payment going through — need a human with a phone and a wallet. We marked those clearly as "needs a manual pass" rather than pretending they were tested. A QA report you can trust is one that's honest about its own gaps.
+
+---
+
+### What "pre-launch cleanup" means
+
+While building, developers leave little messes behind — and that's normal. The most common is **debug logging**: temporary `console.log` lines that print things to the server console so you can see what's happening while you build ("is the API key the right length? what did Brevo reply?"). They're invaluable mid-development and **embarrassing or risky in production** — they clutter the logs and can leak details about keys or internal behaviour. Pre-launch cleanup means going back and **removing all of them**. We pulled three debug logs out of the Brevo email code, while *keeping* the deliberate `console.error` lines — those aren't debug noise, they're proper error logging that helps diagnose real failures later.
+
+Cleanup also covered:
+
+- **Error handling sweep.** We checked every API route handles failure gracefully — meaning if something goes wrong (the blockchain node is unreachable, the database hiccups), the user gets a calm generic "something went wrong" message and the *real* error is logged on the server, never dumped onto the user's screen. (Leaking raw error details to users is both confusing and a security risk — it can reveal how the system is built.) We added explicit "catch any unexpected problem" wrappers to the routes most likely to hit external systems that can throw — the payment verifier (which talks to the blockchain) and the admin database queries.
+- **Config check.** Confirmed every environment variable the app needs actually has a value filled in.
+- **Documentation truth.** Updated the database migration notes so their status (`applied` vs `not yet applied`) matches reality — earlier chunks had applied them but never flipped the label. Docs that lie are worse than no docs.
+
+Finally, the project is "done" but deliberately running on **testnet** — a practice version of the Base blockchain that uses fake money. That's exactly what you want for building and testing payments: you can run real transactions end-to-end without spending a cent. Before a true public launch, a handful of values get switched from testnet to **mainnet** (the real blockchain, real USDC), and the placeholder GitHub/Twitter links get swapped for the real ones. Those switches are listed explicitly at the top of `PROGRESS.md` under "Launch ready" so nothing gets forgotten on the day. Building on testnet first, then flipping one well-documented set of switches, is the safe way to ship anything that touches real money.

@@ -1,5 +1,140 @@
 # PROGRESS
 
+**Project status: ✅ COMPLETE — all 10 chunks done.**
+
+---
+
+## UI polish — wallet menu, navbar identity, AI Vaults rename, clean tx errors
+
+**Status:** Complete · UI-only, no business/payment logic changed.
+
+### Fix 1 — Wallet pill → popover menu
+- **`components/wallet/WalletButton.tsx`** — removed the standalone "Disconnect" button that sat next to the address. The address pill is now the trigger: clicking it opens a small popover with **Copy address** (shows "Copied!" for 1.5s) and **Disconnect**. Closes on outside click or Escape. Clean and minimal — one control instead of two.
+- **`components/wallet/WalletButton.test.tsx`** — updated to drive the new interaction (open menu → Copy address / Disconnect) and added a test for the Disconnect action. The old tests asserted the removed direct-click-to-copy + always-visible disconnect button.
+
+### Fix 2 — "Invest" → "AI Vaults"
+- **`components/layout/Navbar.tsx`** — nav link label `Invest` → `AI Vaults`.
+- **`components/layout/DevSection.tsx`** — CTA button `Invest in AI Vaults →` → `Explore AI Vaults →` (a literal "Invest"→"AI Vaults" swap would have read "AI Vaults in AI Vaults"; this keeps a verb and foregrounds the brand term).
+- **`components/layout/Footer.tsx`** — footer link `Invest` → `AI Vaults` for consistency (not in the original ask, but it shared the same label and would otherwise look inconsistent). The anchor target `#invest` (DevSection `id`) is unchanged so the link still scrolls correctly.
+
+### Fix 3 — Navbar shows the user's name, not their email
+- **`lib/auth/session.ts`** — `name` added to the session token: `SessionPayload` gains `name`, `createSession(email, userId, role?, name?)`, and `getSession()` now returns `{ email, userId, role, name }`. Tokens issued before this field fall back to `name: ''` (re-populated on next login).
+- **`app/api/auth/verify-otp/route.ts`** — existing-user lookup now selects `name` and passes it into `createSession` (login path).
+- **`app/api/auth/complete-signup/route.ts`** — passes the just-collected `name` into `createSession` (new-user path).
+- **`lib/auth/serverAuth.ts`**, **`app/api/auth/me/route.ts`**, **`components/auth/AuthProvider.tsx`** — `name` threaded through `ServerAuthState.user`, the `/api/auth/me` payload, and the client `AuthUser` type. `hooks/useAuth.ts` needed no change — it returns `user` from the typed context, so `name` flows through automatically.
+- **`components/layout/UserMenu.tsx`** (new, client) — replaces the email span + `SignOutButton` in the navbar. Trigger shows the name (falls back to email if name is empty). Clicking opens a popover: **name** (bold), **email** (muted, smaller), divider, **Sign out**. Closes on outside click / Escape.
+- **`components/layout/SignOutButton.tsx`** (deleted) — its sign-out logic now lives inside `UserMenu`; it was no longer referenced anywhere.
+
+### Fix 4 — Friendly transaction errors
+- **`hooks/useWalletPayment.ts`** — added a display-only `friendlyPaymentError()` mapper used in both catch blocks. Maps raw viem/wallet dumps to short lines: user-rejected → "Transaction cancelled.", insufficient funds → "Insufficient USDC balance.", chain/network → "Wrong network. Please switch to Base Sepolia.", else "Transaction failed. Please try again." Already-clean short server messages (≤80 chars, single line — e.g. the retryable "payment received but couldn't be saved") are preserved so a *successful* on-chain payment isn't mislabeled as a failed transaction. **No payment logic changed** — only the `setError` text. The error already renders as small red text under the pay button (`SessionCard`), so no display change was needed.
+
+### Verification
+- `npm test` — **102/102** passing (19 suites; WalletButton tests rewritten for the popover, +1 disconnect test).
+- `npm run build` — green (only the harmless `viem`/`ox` warning); `npx next lint` — clean.
+- Live: homepage renders the `AI Vaults` nav link and `Explore AI Vaults` CTA.
+
+### Note
+Existing logged-in users won't see their name until their **next login** — the name lives in the session token, and current tokens predate the field (they gracefully fall back to showing the email). New logins and signups carry the name immediately.
+
+---
+
+| Chunk | What | Status |
+|-------|------|--------|
+| 1 | Next.js scaffold, folder structure, env, CSP | ✅ |
+| 2 | Homepage UI — hero + 3 session cards | ✅ |
+| 3 | OTP auth — send/verify, name collection, Brevo, Supabase | ✅ |
+| 4 | Session management — middleware, navbar auth, owner check | ✅ |
+| 5 | Wallet connect (wagmi + RainbowKit) | ✅ |
+| 6 | USDC payment flow + server-side tx verification | ✅ |
+| 7 | Session access control — DB gating | ✅ |
+| 8 | Session content pages | ✅ |
+| 9 | Owner dashboard — stats, users, payments, breakdown | ✅ |
+| 10 | Developer/investor section + Hotjar + cleanup + QA | ✅ |
+
+---
+
+## 🚀 Launch ready — switch these before real launch
+
+The app is fully built and verified on **testnet (Base Sepolia)**. Before going live with real money and real users, make the following switches.
+
+### On testnet now — must switch to mainnet
+- `lib/web3/config.ts` — chain `baseSepolia` → `base`
+- `lib/web3/contracts.ts` — USDC `0x036CbD53842c5426634e7929541eC2318f3dCF7e` (Sepolia) → `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` (Base mainnet)
+- `app/api/payment/verify/route.ts` — `CHAIN_ID = 84532` → `8453`
+- `.env.local` + Vercel — `NEXT_PUBLIC_CHAIN_ID` `84532` → `8453`; `NEXT_PUBLIC_ALCHEMY_RPC_URL` + `ALCHEMY_RPC_URL` → Base **mainnet** Alchemy endpoint
+- `components/admin/PaymentTable.tsx` — `https://sepolia.basescan.org/tx/` → `https://basescan.org/tx/`
+- `NEXT_PUBLIC_PAYMENT_ADDRESS` — confirm it is the **real payment-receiving wallet** (not the USDC contract address)
+
+### Placeholder URLs to update before launch
+- **Twitter/X** — `constants/sessions.ts` currently uses `https://x.com/defilordsss` for all 3 sessions. Replace each with the real per-session post/thread URL.
+- **GitHub** — `components/layout/DevSection.tsx` uses `https://github.com/DefiLords` (placeholder). Replace with the real repo URL. (`components/layout/Footer.tsx` also links `https://github.com/defilords`.)
+- **AI Vaults** — `components/layout/DevSection.tsx` uses `https://aivaults.defilords.finance/` — confirm this is the correct live deposit page.
+
+### Final pre-launch checks
+- Owner row inserted in `user_roles` (the email that should reach `/admin`).
+- All `.env.local` values mirrored into the Vercel project env (production).
+- Migrations M001/M002/M003 applied in the **production** Supabase project.
+
+---
+
+## Chunk 10 — Developer/investor section + Hotjar + cleanup + QA
+
+**Status:** Complete
+
+### What was completed
+- **`constants/sessions.ts`** — `twitterUrl` set to `https://x.com/defilordsss` for all 3 sessions (per the latest owner instruction, replacing the earlier `twitter.com/DefiLords` placeholder).
+- **`components/layout/DevSection.tsx`** (new) — "Build with DefiLords" section on a slightly lighter `bg-brand-surface` (#1a1a15), amber heading, two buttons opening in a new tab: **View on GitHub →** (`https://github.com/DefiLords`, placeholder) and **Invest in AI Vaults →** (`https://aivaults.defilords.finance/`). Given `id="invest"` so the existing Navbar/Footer "Invest" anchors scroll to it.
+- **`app/page.tsx`** — renders `<DevSection />` at the bottom of `<main>`, above the Footer.
+- **`app/layout.tsx`** — added the Contentsquare/Hotjar tracking loader via `next/script` (`strategy="afterInteractive"`, so it never blocks page load). The Site ID is read from `NEXT_PUBLIC_HOTJAR_ID` (not hardcoded) and the script only renders when the var is set. It carries the per-request CSP **nonce** (read from `x-nonce`) so `strict-dynamic` lets it load in production. No `dangerouslySetInnerHTML` — `next/script` takes the loader as children.
+- **`.env.local`** — `NEXT_PUBLIC_HOTJAR_ID=872924` (already present and confirmed).
+- **Pre-launch cleanup:**
+  - Removed the 3 temporary debug `console.log` statements from `lib/brevo/client.ts` (key-length log + Brevo response status/body logs). Kept the legitimate `console.error` error logging.
+  - Audited every API route. Added explicit `try/catch` + server-side `console.error` + generic client message to the routes that perform external-RPC / multi-step DB work and could *throw* (vs. return an `error` object): `payment/verify`, `admin/stats`, `admin/users`, `admin/payments`, `wallet/save`. The rest already follow the auth → Zod-validate → generic-error pattern, and Next.js converts any unexpected throw into a generic 500 (no stack leak in production).
+  - Confirmed `.env.local` has every required variable filled.
+  - `database/MIGRATIONS.md` — corrected the stale statuses for **M002** and **M003** to `✅ applied` (both were already applied and tested live in earlier chunks). `database/SCHEMA.md` already documents all five tables and matches `lib/supabase/types.ts`.
+
+### Final QA results
+See the QA checklist below — all server-verifiable items pass ✅; wallet/email/payment flows verified by code + existing automated tests and flagged for a final manual pass on testnet.
+
+### Verification
+- `npm test` — **101/101** passing (19 suites).
+- `npm run build` — green (only the harmless `viem`/`ox` critical-dependency warning).
+- `npx next lint` — no warnings or errors.
+
+### QA checklist
+
+| # | Item | Result | How verified |
+|---|------|--------|--------------|
+| 1 | Homepage loads clean | ✅ | `GET /` 200, hero + 3 cards + DevSection render |
+| 2 | Session 1 card — Free + Watch now | ✅ | "Free" + "Watch now →" in HTML |
+| 3 | Session 2 card — $50 USDC + locked | ✅ | "$50 USDC" in HTML; locked/pay states in `SessionCard` |
+| 4 | Session 3 card — $100 USDC + locked | ✅ | "$100 USDC" in HTML |
+| 5 | Navbar "Get started" → /login | ✅ | `Navbar.tsx` href `/login` |
+| 6 | OTP login — email arrives, code verifies | ⚠️ manual | covered by `send-otp`/`verify-otp` route tests; needs live inbox check |
+| 7 | New user → name → logged in → welcome email | ⚠️ manual | covered by `complete-signup` tests; needs live inbox check |
+| 8 | Existing user → OTP → logged in directly | ⚠️ manual | `verify-otp` returns `isNewUser:false` path (tested) |
+| 9 | Wallet connect button works | ⚠️ manual | RainbowKit `WalletButton` (component tests); needs live wallet |
+| 10 | Wallet address shows in navbar + copyable | ✅ | `WalletPill`/`WalletStatus` render + click-to-copy |
+| 11 | Disconnect wallet works | ✅ | `WalletButton` disconnect path (tested) |
+| 12 | Session 1 accessible after login | ✅ | `hasSessionAccess` returns true for session 1 (tested) |
+| 13 | Pay $50 USDC → verified → session 2 unlocked | ⚠️ manual | `payment/verify` + `verifyUsdcPayment` fully tested; needs live testnet tx |
+| 14 | Session 2 card "✓ Access granted" after payment | ✅ | `SessionCard` access state + `refresh()` after pay |
+| 15 | /sessions/2 shows content + Twitter button | ✅ | `SessionContent` test; Twitter URL `x.com/defilordsss` |
+| 16 | /sessions/3 redirects to homepage with ?locked=3 | ✅ | access gate redirects no-access → `/?locked=3` (tested) |
+| 17 | /admin accessible with owner email | ✅ | layout owner gate (`session.role==='owner'`) |
+| 18 | /admin shows correct stats | ✅ | `getStats` tested; `/api/admin/stats` 200 for owner |
+| 19 | /admin/users shows user table | ✅ | `getUsers` + `UserTable` (tested) |
+| 20 | /admin/payments shows history w/ basescan links | ✅ | `PaymentTable` links to `sepolia.basescan.org` (testnet) |
+| 21 | /admin redirects non-owners to homepage | ✅ | middleware: session + role!=='owner' → `/` |
+| 22 | Developer section visible on homepage | ✅ | "Build with DefiLords" in `GET /` HTML |
+| 23 | AI Vaults link opens correctly | ✅ | `aivaults.defilords.finance` link, `target="_blank"` |
+| 24 | Sign out works | ✅ | `sign-out` route clears cookie (tested) |
+| 25 | Mobile responsive — 375px width | ✅ | mobile-first Tailwind (`flex-col sm:flex-row`, `grid-cols-1 sm:...`) throughout |
+
+**Unauthenticated route gating verified live (307 redirects):** `/sessions/2` & `/sessions/3` → `/login`, `/admin` & `/admin/users` → `/login`. Authenticated non-owners are redirected to `/` by middleware.
+
+> ⚠️ The 5 items marked **manual** require a real email inbox, a real wallet, and a testnet USDC transaction — they cannot be exercised from the build/test harness. Each is covered by automated unit/integration tests; do one live manual pass on testnet before launch.
+
 ---
 
 ## Perf & UX — skeletons, client singleton, OTP round trip, progress bar

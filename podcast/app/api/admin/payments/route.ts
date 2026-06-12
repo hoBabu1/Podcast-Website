@@ -18,6 +18,11 @@ export async function GET(req: Request): Promise<NextResponse> {
   const parsed = QuerySchema.safeParse({ page: searchParams.get('page') ?? undefined })
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
-  const result = await getPayments(parsed.data.page)
-  return NextResponse.json(result)
+  try {
+    const result = await getPayments(parsed.data.page)
+    return NextResponse.json(result)
+  } catch (err) {
+    console.error('[admin/payments] query error:', err)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
 }

@@ -16,7 +16,7 @@ Rules:
 
 ## M003 — 2026-06-07 — user_wallets table
 
-**Status:** ⬜ not yet applied — run in Supabase SQL Editor before starting chunk 6
+**Status:** ✅ applied 2026-06-07
 
 ```sql
 -- ============================================================
@@ -52,7 +52,7 @@ create index idx_user_wallets_address
 
 ## M002 — 2026-06-07 — otp_codes table
 
-**Status:** ⬜ not yet applied — run in Supabase SQL Editor before testing OTP auth
+**Status:** ✅ applied 2026-06-07
 
 ```sql
 -- ============================================================

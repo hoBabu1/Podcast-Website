@@ -14,7 +14,7 @@ jest.mock('@rainbow-me/rainbowkit', () => ({
   ConnectButton: () => <button data-testid="rk-connect-button">Connect Wallet</button>,
 }))
 
-import { useAccount } from 'wagmi'
+import { useAccount, useDisconnect } from 'wagmi'
 
 const CONNECTED_ADDRESS = '0xABCDEF1234567890abcdef1234567890ABCDEF12'
 
@@ -42,37 +42,68 @@ describe('WalletButton', () => {
     expect(screen.getByText('0xABCD...EF12')).toBeInTheDocument()
   })
 
-  it('renders disconnect button when connected', () => {
+  it('hides the menu until the pill is clicked, then shows Copy address + Disconnect', () => {
     ;(useAccount as jest.Mock).mockReturnValue({ isConnected: true, address: CONNECTED_ADDRESS })
     render(<WalletButton />)
-    expect(screen.getByRole('button', { name: /disconnect/i })).toBeInTheDocument()
+
+    // Menu is closed initially — no disconnect / copy actions visible.
+    expect(screen.queryByRole('menuitem', { name: /disconnect/i })).not.toBeInTheDocument()
+
+    act(() => {
+      fireEvent.click(screen.getByText('0xABCD...EF12'))
+    })
+
+    expect(screen.getByRole('menuitem', { name: /copy address/i })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /disconnect/i })).toBeInTheDocument()
   })
 
-  it('copies full address to clipboard and shows Copied! on click', async () => {
+  it('copies full address to clipboard and shows Copied! when Copy address is clicked', async () => {
     ;(useAccount as jest.Mock).mockReturnValue({ isConnected: true, address: CONNECTED_ADDRESS })
     render(<WalletButton />)
 
-    await act(async () => {
+    act(() => {
       fireEvent.click(screen.getByText('0xABCD...EF12'))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: /copy address/i }))
     })
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(CONNECTED_ADDRESS)
     expect(screen.getByText('Copied!')).toBeInTheDocument()
   })
 
-  it('reverts from Copied! back to short address after 1.5 seconds', async () => {
+  it('reverts the Copy address item from Copied! after 1.5 seconds', async () => {
     ;(useAccount as jest.Mock).mockReturnValue({ isConnected: true, address: CONNECTED_ADDRESS })
     render(<WalletButton />)
 
-    await act(async () => {
+    act(() => {
       fireEvent.click(screen.getByText('0xABCD...EF12'))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: /copy address/i }))
     })
 
     expect(screen.getByText('Copied!')).toBeInTheDocument()
 
     act(() => jest.advanceTimersByTime(1500))
 
-    expect(screen.getByText('0xABCD...EF12')).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /copy address/i })).toBeInTheDocument()
     expect(screen.queryByText('Copied!')).not.toBeInTheDocument()
+  })
+
+  it('disconnects when Disconnect is clicked', () => {
+    const disconnect = jest.fn()
+    ;(useDisconnect as jest.Mock).mockReturnValue({ disconnect })
+    ;(useAccount as jest.Mock).mockReturnValue({ isConnected: true, address: CONNECTED_ADDRESS })
+    render(<WalletButton />)
+
+    act(() => {
+      fireEvent.click(screen.getByText('0xABCD...EF12'))
+    })
+    act(() => {
+      fireEvent.click(screen.getByRole('menuitem', { name: /disconnect/i }))
+    })
+
+    expect(disconnect).toHaveBeenCalled()
   })
 })

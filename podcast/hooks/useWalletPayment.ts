@@ -20,6 +20,31 @@ export type PaymentStatus =
 // has not yet been recorded. Held so the user can re-verify WITHOUT paying again.
 type PendingPayment = { txHash: `0x${string}`; sessionId: 2 | 3 }
 
+// Maps raw wallet/RPC errors (which can be huge viem dumps) to a short, friendly
+// line for the UI. Display-only — it never changes what the payment flow does.
+function friendlyPaymentError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : ''
+  const lower = msg.toLowerCase()
+
+  if (lower.includes('user rejected') || lower.includes('user denied')) {
+    return 'Transaction cancelled.'
+  }
+  if (lower.includes('insufficient funds')) {
+    return 'Insufficient USDC balance.'
+  }
+  if (lower.includes('chain') || lower.includes('network')) {
+    return 'Wrong network. Please switch to Base Sepolia.'
+  }
+  // Server-side verification already returns short, user-safe messages (e.g. the
+  // retryable "payment received but couldn't be saved") — keep those as-is so the
+  // user isn't wrongly told the transaction failed. Only fall back to the generic
+  // line for long/raw errors.
+  if (msg && msg.length <= 80 && !msg.includes('\n')) {
+    return msg
+  }
+  return 'Transaction failed. Please try again.'
+}
+
 export function useWalletPayment() {
   const router = useRouter()
   const { address, isConnected } = useAccount()
@@ -99,7 +124,7 @@ export function useWalletPayment() {
       await verify(hash, sessionId)
     } catch (err) {
       console.error('[useWalletPayment]', err)
-      setError(err instanceof Error ? err.message : 'Payment failed')
+      setError(friendlyPaymentError(err))
       setStatus('error')
     }
   }
@@ -113,7 +138,7 @@ export function useWalletPayment() {
       await verify(pending.txHash, pending.sessionId)
     } catch (err) {
       console.error('[useWalletPayment] retry', err)
-      setError(err instanceof Error ? err.message : 'Payment failed')
+      setError(friendlyPaymentError(err))
       setStatus('error')
     }
   }

@@ -4,7 +4,6 @@ const BREVO_API_BASE = 'https://api.brevo.com/v3'
 
 async function brevoRequest(path: string, body: unknown): Promise<void> {
   const key = (process.env.BREVO_API_KEY ?? '').trim()
-  console.log('[Brevo] key length:', key.length, '| first 6:', key.slice(0, 6), '| last 4:', key.slice(-4), '| raw had whitespace:', key !== (process.env.BREVO_API_KEY ?? ''))
   const res = await fetch(`${BREVO_API_BASE}${path}`, {
     method: 'POST',
     headers: {
@@ -16,8 +15,6 @@ async function brevoRequest(path: string, body: unknown): Promise<void> {
   })
 
   const responseText = await res.text()
-  console.log('Brevo response status:', res.status)
-  console.log('Brevo response body:', responseText)
 
   if (!res.ok) {
     console.error(`[Brevo] API error — status: ${res.status}, path: ${path}, body: ${responseText}`)

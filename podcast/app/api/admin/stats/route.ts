@@ -9,6 +9,11 @@ export async function GET(req: Request): Promise<NextResponse> {
   const isOwner = await checkOwnerRole(session.email)
   if (!isOwner) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const stats = await getStats()
-  return NextResponse.json(stats)
+  try {
+    const stats = await getStats()
+    return NextResponse.json(stats)
+  } catch (err) {
+    console.error('[admin/stats] query error:', err)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
 }

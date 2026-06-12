@@ -19,7 +19,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const accessibleSessions = (data ?? []).map((row) => row.session_id)
 
   return NextResponse.json({
-    user: { email: session.email, userId: session.userId },
+    user: { email: session.email, userId: session.userId, name: session.name },
     isOwner: session.role === 'owner',
     accessibleSessions,
   })

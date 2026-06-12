@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { SessionCard } from '@/components/sessions/SessionCard'
+import { DevSection } from '@/components/layout/DevSection'
 import { LockedScroller } from '@/components/sessions/LockedScroller'
 import { SESSIONS } from '@/constants/sessions'
 
@@ -57,6 +58,8 @@ export default function HomePage({
             ))}
           </div>
         </section>
+
+        <DevSection />
       </main>
 
       <Footer />

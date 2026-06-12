@@ -18,6 +18,17 @@ const AMOUNT_BY_SESSION: Record<2 | 3, string> = {
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
+  try {
+    return await handleVerify(req)
+  } catch (err) {
+    // Catches anything thrown by JSON parsing or the on-chain RPC call so the
+    // client never sees a raw stack trace.
+    console.error('[payment/verify] unexpected error:', err)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
+}
+
+async function handleVerify(req: Request): Promise<NextResponse> {
   const session = await getSession(req)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

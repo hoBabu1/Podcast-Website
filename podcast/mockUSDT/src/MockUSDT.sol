@@ -9,8 +9,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract MockUSDT is ERC20 {
     constructor() ERC20("Mock Tether USD", "USDT") {}
 
-    /// @notice Mint `amount` tokens 
-    to `to`. Open to anyone, no cap.
+    /// @notice Mint `amount` tokens to `to`. Open to anyone, no cap.
     /// @param to The address that receives the minted tokens.
     /// @param amount The amount to mint (in wei units, 18 decimals).
     function mint(address to, uint256 amount) external {

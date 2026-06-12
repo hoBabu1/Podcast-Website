@@ -5,6 +5,7 @@ interface SessionPayload {
   email: string
   userId: string
   role: 'owner' | null
+  name: string
   exp: number
 }
 
@@ -34,13 +35,15 @@ async function importKey(secret: string): Promise<CryptoKey> {
 export async function createSession(
   email: string,
   userId: string,
-  role: 'owner' | null = null
+  role: 'owner' | null = null,
+  name = ''
 ): Promise<string> {
   const secret = process.env.SESSION_SECRET!
   const payload: SessionPayload = {
     email,
     userId,
     role,
+    name,
     exp: Date.now() + MAX_AGE_SECONDS * 1000,
   }
   const data = toBase64url(new TextEncoder().encode(JSON.stringify(payload)))
@@ -51,7 +54,7 @@ export async function createSession(
 
 export async function getSession(
   req: Request
-): Promise<{ email: string; userId: string; role: 'owner' | null } | null> {
+): Promise<{ email: string; userId: string; role: 'owner' | null; name: string } | null> {
   const secret = process.env.SESSION_SECRET
   if (!secret) return null
 
@@ -85,7 +88,13 @@ export async function getSession(
 
     if (payload.exp < Date.now()) return null
 
-    return { email: payload.email, userId: payload.userId, role: payload.role }
+    // `name` is absent from tokens issued before this field existed; fall back to ''.
+    return {
+      email: payload.email,
+      userId: payload.userId,
+      role: payload.role,
+      name: payload.name ?? '',
+    }
   } catch {
     return null
   }

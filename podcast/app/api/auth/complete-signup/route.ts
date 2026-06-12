@@ -46,7 +46,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     await addContact(name, email)
     await sendWelcomeEmail(name, email)
 
-    const token = await createSession(email, (inserted as Pick<UserRow, 'id'>).id, null)
+    const token = await createSession(email, (inserted as Pick<UserRow, 'id'>).id, null, name)
     const res = NextResponse.json({ success: true })
     res.headers.set('Set-Cookie', makeSessionCookie(token))
     return res

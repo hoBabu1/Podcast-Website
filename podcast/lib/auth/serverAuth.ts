@@ -3,7 +3,7 @@ import { SESSION_COOKIE, getSession } from './session'
 import { getUserSessionAccess } from '@/lib/sessions/access'
 
 export interface ServerAuthState {
-  user: { email: string; userId: string } | null
+  user: { email: string; userId: string; name: string } | null
   isOwner: boolean
   /** Session IDs the logged-in user has paid for. Empty when logged out. */
   accessibleSessions: number[]
@@ -33,7 +33,7 @@ export async function getServerAuthState(): Promise<ServerAuthState> {
   }
 
   return {
-    user: { email: session.email, userId: session.userId },
+    user: { email: session.email, userId: session.userId, name: session.name },
     isOwner: session.role === 'owner',
     accessibleSessions: await getUserSessionAccess(session.userId),
   }

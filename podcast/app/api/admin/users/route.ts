@@ -23,6 +23,11 @@ export async function GET(req: Request): Promise<NextResponse> {
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
   const { page, search } = parsed.data
-  const result = await getUsers(page, search)
-  return NextResponse.json(result)
+  try {
+    const result = await getUsers(page, search)
+    return NextResponse.json(result)
+  } catch (err) {
+    console.error('[admin/users] query error:', err)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+  }
 }

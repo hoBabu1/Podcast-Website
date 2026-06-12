@@ -26,7 +26,7 @@ export function Footer() {
             href="#invest"
             className="text-brand-muted hover:text-brand-amber text-sm transition-colors"
           >
-            Invest
+            AI Vaults
           </Link>
         </div>
       </div>
