@@ -18,17 +18,17 @@ export function UserTable({
 
   return (
     <div>
-      <form method="get" action="/admin/users" className="mb-5 flex gap-2">
+      <form method="get" action="/admin/users" className="mb-5 flex flex-col gap-2 sm:flex-row">
         <input
           type="text"
           name="search"
           defaultValue={search}
           placeholder="Search by name or email"
-          className="flex-1 rounded border border-brand-border bg-brand-bg px-3 py-2 text-sm text-brand-heading placeholder:text-brand-muted focus:border-brand-amber focus:outline-none"
+          className="w-full min-h-[44px] flex-1 rounded border border-brand-border bg-brand-bg px-3 py-2 text-sm text-brand-heading placeholder:text-brand-muted focus:border-brand-amber focus:outline-none"
         />
         <button
           type="submit"
-          className="rounded bg-brand-amber px-4 py-2 text-sm font-semibold text-brand-bg hover:bg-brand-amberDark transition-colors"
+          className="min-h-[44px] rounded bg-brand-amber px-4 py-2 text-sm font-semibold text-brand-bg hover:bg-brand-amberDark transition-colors"
         >
           Search
         </button>

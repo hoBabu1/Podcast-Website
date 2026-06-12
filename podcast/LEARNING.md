@@ -1361,3 +1361,54 @@ Cleanup also covered:
 - **Documentation truth.** Updated the database migration notes so their status (`applied` vs `not yet applied`) matches reality — earlier chunks had applied them but never flipped the label. Docs that lie are worse than no docs.
 
 Finally, the project is "done" but deliberately running on **testnet** — a practice version of the Base blockchain that uses fake money. That's exactly what you want for building and testing payments: you can run real transactions end-to-end without spending a cent. Before a true public launch, a handful of values get switched from testnet to **mainnet** (the real blockchain, real USDC), and the placeholder GitHub/Twitter links get swapped for the real ones. Those switches are listed explicitly at the top of `PROGRESS.md` under "Launch ready" so nothing gets forgotten on the day. Building on testnet first, then flipping one well-documented set of switches, is the safe way to ship anything that touches real money.
+
+---
+
+### Making the site work on a phone — mobile-first, touch targets, and horizontal scroll
+
+This pass had one rule: change how the site *looks and lays out* on small screens, without touching a single line of payment logic, auth logic, or API code. Almost everything here is just CSS class names. Three ideas are worth understanding because they're the whole reason "works on my laptop" and "works on a phone" are different problems.
+
+#### What "mobile-first" actually means
+
+Mobile-first is a way of writing your styles where **the phone layout is the default, and bigger screens are the exception you opt into** — not the other way around.
+
+In this project we use **Tailwind**, where you add styling by stacking small class names like `flex`, `gap-6`, `px-4`. Tailwind has special prefixes — `sm:`, `md:`, `lg:` — that mean "only apply this *at this screen width or wider*." `sm:` kicks in at 640px, `md:` at 768px, `lg:` at 1024px. Crucially, a class with **no prefix applies everywhere**, including the smallest phone.
+
+So when you write:
+
+```
+grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+```
+
+you're saying: "**one column by default** (phone), two columns once the screen is ≥640px, three columns once it's ≥1024px." The phone gets the simplest layout for free, and wider screens *add* complexity. That's mobile-first: start from the most constrained device and layer on richness as space allows.
+
+The opposite approach — designing for desktop and then trying to cram it down — is how you end up with the broken navbar we started with: everything assumes there's plenty of horizontal room, and on a 375px-wide phone it all collides.
+
+A practical consequence showed up all over this change. To make the navbar work on phones *without* disturbing the desktop, we wrapped the old desktop row in `hidden sm:flex` ("hidden by default, become a flex row at ≥640px") and added a separate hamburger menu marked `sm:hidden` ("visible by default, disappear at ≥640px"). The two never show at the same time — the breakpoint is a switch. The desktop at 1280px renders the *exact same markup it always did*, because every mobile-specific change is locked behind a prefix and never changes the unprefixed (= all-screens) styles in a way desktop would see. That's the discipline: **mobile changes add `sm:`/`md:`/`lg:` rules; they don't rewrite the base styles desktop depends on.**
+
+#### What a "touch target" is, and why 44px is the magic number
+
+A **touch target** is the area you can tap to trigger something — a button, a link, a menu item. On a desktop you have a mouse pointer that's one pixel wide and pixel-perfect. On a phone you have a fingertip, which is soft, wide, and *can't see what it's covering*.
+
+Both Apple and Google publish the same guidance: **make tap targets at least ~44×44 pixels** (Apple says 44pt, Google's Material guidance says 48dp — we used 48px to satisfy both). Below that, people miss. They tap "Pay" and hit "Cancel," or they jab at a link three times before it registers. It feels broken even when the code is perfect — the problem is purely physical.
+
+That's why throughout this change you'll see `min-h-[48px]` (and `min-h-[44px]` on a couple of admin inputs) added to buttons, links, and form fields. `min-h-[48px]` means "this element is *at least* 48 pixels tall, no matter how little text is inside it." A button reading "Pay" is only as tall as the word "Pay" by default — maybe 32px — which is a frustrating target. Forcing a minimum height gives the finger room to land. We pair it with `flex items-center justify-center` so the label stays vertically centred inside that taller box instead of sticking to the top.
+
+The same logic is why the mobile menu rows are tall and generously spaced: when links are stacked close together, a slightly-off tap hits the *wrong* link. Spacing them out so "fat fingers don't miss" isn't decoration — it's the difference between a menu that works and one that fights you.
+
+#### What "horizontal scroll" is, and why it quietly ruins a mobile page
+
+**Horizontal scroll** is when a page is *wider than the screen*, so you can swipe left-and-right, not just up-and-down. On desktop you barely notice — there's a scrollbar and a big window. On a phone it's a disaster:
+
+- The page jiggles sideways as you try to scroll vertically.
+- Content hides off the right edge where you can't see it.
+- Tapping becomes unreliable because the layout shifts under your finger.
+- It just *feels* broken and cheap, even if every individual piece is fine.
+
+It almost always comes from **one element that refuses to shrink** — a fixed-width button, a long unbreakable string (like a wallet address or transaction hash), an image with a hardcoded width, or a row of items that assumes desktop spacing. That single too-wide element stretches the whole page wider than the viewport, and now the *entire* site scrolls sideways because of it.
+
+The original navbar was exactly this: the wallet "Connect" button plus the links plus the user menu added up to more than 375px of width, so the homepage could be dragged sideways. Replacing that row with a hamburger on phones removed the overflow at its source — the single best fix is always to find the element that's too wide and make it stack, wrap, or collapse.
+
+As a backstop we also added `overflow-x-clip` to the page's `<body>`. This tells the browser "never allow sideways scrolling here — if something pokes past the edge, just clip it off." We deliberately chose `overflow-x-clip` over the more common `overflow-x-hidden`: `hidden` secretly turns the body into a scroll container, which **breaks `position: sticky`** — and our navbar relies on sticky to stay pinned at the top as you scroll. `clip` does the same visual job (no sideways scroll) *without* that side effect. It's a small but real example of how two CSS values that look interchangeable have different consequences, and why it's worth knowing the difference. The backstop is a safety net, not the fix — the real work is making each piece fit; the clip just guarantees a stray pixel somewhere can never hand the user a janky sideways-sliding page.
+
+Other small wrapping fixes followed the same spirit: the breadcrumb (`DefiLords → Sessions → Session 2`) got `flex-wrap` so it drops onto a second line instead of pushing off-screen, and the admin tables were left with `overflow-x-auto` — which lets *just the table* scroll sideways inside its own little box while the rest of the page stays put. That last one is the key distinction: a table with lots of columns genuinely needs horizontal room, so you give *it* a private scroll area rather than squishing the columns unreadably or letting it break the whole page. Horizontal scroll isn't always wrong — it's wrong when it's the *whole page*; it's a perfectly good tool when it's deliberately scoped to one wide component.

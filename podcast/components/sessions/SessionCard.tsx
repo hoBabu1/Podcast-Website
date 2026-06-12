@@ -71,7 +71,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
     // Auth/access still resolving on the client — show a button-sized skeleton
     // instead of briefly flashing the wrong action (e.g. "Get started").
     if (authLoading) {
-      return <Skeleton className="h-10 w-full" />
+      return <Skeleton className="h-12 w-full" />
     }
 
     if (hasAccess) {
@@ -82,7 +82,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
           </span>
           <Link
             href={`/sessions/${session.id}`}
-            className="w-full py-2.5 rounded-lg text-sm font-semibold text-center bg-brand-amber text-brand-bg hover:bg-brand-amberDark transition-colors"
+            className="flex w-full min-h-[48px] items-center justify-center py-2.5 rounded-lg text-sm font-semibold text-center bg-brand-amber text-brand-bg hover:bg-brand-amberDark transition-colors"
           >
             View Session →
           </Link>
@@ -107,7 +107,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
           <p className="text-brand-muted text-xs text-center">Connect your wallet to pay</p>
           <button
             onClick={openConnectModal}
-            className="w-full py-2.5 rounded-lg text-sm font-semibold bg-brand-amber text-brand-bg hover:bg-brand-amberDark transition-colors cursor-pointer"
+            className="w-full min-h-[48px] py-2.5 rounded-lg text-sm font-semibold bg-brand-amber text-brand-bg hover:bg-brand-amberDark transition-colors cursor-pointer"
           >
             Connect Wallet
           </button>
@@ -119,7 +119,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
       <button
         disabled={authLoading}
         onClick={() => pay(sessionId)}
-        className="w-full py-2.5 rounded-lg text-sm font-semibold bg-brand-amber text-brand-bg hover:bg-brand-amberDark transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+        className="w-full min-h-[48px] py-2.5 rounded-lg text-sm font-semibold bg-brand-amber text-brand-bg hover:bg-brand-amberDark transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
       >
         Pay ${session.price} USDC
       </button>
@@ -162,7 +162,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
         {canRetryVerification && !isPaying && !hasAccess && (
           <button
             onClick={retryVerification}
-            className="w-full py-2.5 rounded-lg text-sm font-semibold bg-brand-amber text-brand-bg hover:bg-brand-amberDark transition-colors cursor-pointer"
+            className="w-full min-h-[48px] py-2.5 rounded-lg text-sm font-semibold bg-brand-amber text-brand-bg hover:bg-brand-amberDark transition-colors cursor-pointer"
           >
             Payment sent — retry unlock
           </button>

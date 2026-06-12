@@ -29,16 +29,16 @@ export default function HomePage({
           <p className="text-brand-amber text-sm font-semibold tracking-widest uppercase mb-4">
             Web3 learning platform
           </p>
-          <h1 className="text-brand-heading text-4xl sm:text-5xl font-bold leading-tight tracking-tight max-w-2xl mx-auto mb-6">
+          <h1 className="text-brand-heading text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight max-w-2xl mx-auto mb-6 break-words text-balance">
             Learn DeFi.{' '}
             <span className="text-brand-amber">From zero</span> to advanced strategies.
           </h1>
-          <p className="text-brand-body text-lg max-w-xl mx-auto mb-10">
+          <p className="text-brand-body text-base sm:text-lg max-w-xl mx-auto mb-10 break-words text-balance">
             Three sessions. Real strategies. Paid only when you&apos;re ready — start completely free.
           </p>
           <Link
             href="#sessions"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-amber text-brand-bg font-semibold text-base hover:bg-brand-amberDark transition-colors"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-6 py-3 min-h-[48px] rounded-lg bg-brand-amber text-brand-bg font-semibold text-base hover:bg-brand-amberDark transition-colors"
           >
             Start free — Session 1
           </Link>

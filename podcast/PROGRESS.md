@@ -4,6 +4,37 @@
 
 ---
 
+## Mobile-first responsive pass
+
+**Status:** Complete · UI-only. No business logic, payment logic, or API routes touched. Verified at 375px (iPhone SE), 390px (iPhone 14), 768px (iPad), 1280px (desktop). Desktop layout at 1280px is unchanged — every mobile change is gated behind a Tailwind breakpoint prefix (`sm:` = ≥640px) and never overrides desktop globally.
+
+### What changed and why
+
+**1. Navbar — the only genuinely broken piece.**
+The old navbar crammed the RainbowKit Connect button + nav links + user menu into one row with no hamburger; at 375px it overflowed and pushed content off-screen.
+- **`components/layout/MobileNav.tsx`** (new, client) — a hamburger button (`sm:hidden`) that opens a **full-width dropdown** below the navbar. The panel combines everything that used to be inline: `Sessions` / `AI Vaults` links, a `Dashboard` link for owners, the signed-in identity (name bold + email muted) with `Sign out`, and the wallet block (`0x096D…a33a` + `Copy`, then `Disconnect`). If logged out it shows a prominent full-width amber **Get started** button instead of the identity block, and **Connect wallet** when no wallet is connected. Closes on outside tap, Escape, or tapping any link. Reuses the exact same sign-out (`POST /api/auth/sign-out`) and wallet (`wagmi` disconnect / RainbowKit connect modal) calls the desktop `UserMenu` / `WalletButton` already make — no new logic. Every row is `min-h-[48px]`.
+- **`components/layout/Navbar.tsx`** — the existing inline cluster is now wrapped in `hidden sm:flex` (so it appears unchanged at ≥640px), and `<MobileNav>` is rendered alongside it for `<640px`. Added `relative` to the `<nav>` so the dropdown can position full-width against it. Desktop markup is otherwise identical.
+
+**2. Homepage.** Hero already scaled (`text-4xl sm:text-5xl`) and cards already stacked (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`) with 16px padding (`px-4`). Made the **`Start free — Session 1`** CTA full-width on mobile only: `w-full sm:w-auto justify-center min-h-[48px]`.
+
+**3. Session cards.** Every action button (`Pay $X USDC`, `Connect Wallet`, `View Session`, `Get started to unlock`, retry) now `min-h-[48px]` with flex centering so the tap target clears the 48px bar. Loading skeleton bumped `h-10 → h-12` to match. Price badge / lock icon already used `flex-shrink-0` and didn't overflow.
+
+**4. Session content page.** `Watch on Twitter →` was already `w-full sm:w-auto`; the Session-3 secondary buttons are now `min-h-[48px]`. **`SessionBreadcrumb`** gained `flex-wrap` so `DefiLords → Sessions → Session N` wraps instead of overflowing on a narrow screen.
+
+**5. Owner dashboard.** Already mostly responsive — stats grid was `grid-cols-2 lg:grid-cols-4` (2×2 on mobile) and both tables already had `overflow-x-auto`. Only change: the user-search form now stacks on mobile (`flex flex-col gap-2 sm:flex-row`) so the search input is genuinely full-width, with `min-h-[44px]` on input and button.
+
+**6. Global.** Added `overflow-x-clip` to `<body>` in **`app/layout.tsx`** as a horizontal-scroll safety net. Used `overflow-x-clip` rather than `overflow-x-hidden` deliberately — `hidden` turns the body into a scroll container and can break the navbar's `position: sticky`, whereas `clip` does not.
+
+### Verification
+- `npm run build` — green. `npx next lint` — clean. `npm test` — **102/102** passing (no test changes needed; all edits were className-only).
+- `npx tsc --noEmit` — no new errors (the only failures are pre-existing `NODE_ENV`/`ProcessEnv` typings in `lib/env.test.ts`, untouched here).
+- Dev server: `/` and `/login` return 200; navbar markup contains both the `hidden sm:flex` desktop cluster and the `sm:hidden` hamburger (CSS decides which shows per breakpoint).
+
+### Note / not done
+The OTP screen (`components/auth/OtpStep.tsx`) was left as a single full-width, large (`py-3 text-xl`, ~52px tall) numeric input rather than six separate digit boxes. It already satisfies "full width + large touch target" and a single input is the more robust, lower-risk pattern (paste, autofill, backspace all just work). Converting to six segmented boxes is a behaviour rewrite, not a className tweak — flagged here rather than done silently.
+
+---
+
 ## UI polish — wallet menu, navbar identity, AI Vaults rename, clean tx errors
 
 **Status:** Complete · UI-only, no business/payment logic changed.

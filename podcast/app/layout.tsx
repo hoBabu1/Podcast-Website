@@ -35,7 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-brand-bg text-brand-body`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-brand-bg text-brand-body overflow-x-clip`}
       >
         {hotjarId && (
           <Script id="contentsquare" strategy="afterInteractive" nonce={nonce}>

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE, getSession } from '@/lib/auth/session'
 import { UserMenu } from './UserMenu'
+import { MobileNav } from './MobileNav'
 import { WalletButton } from '@/components/wallet/WalletButton'
 
 export async function Navbar() {
@@ -13,23 +14,24 @@ export async function Navbar() {
   const session = await getSession(req)
 
   return (
-    <nav className="w-full border-b border-brand-border bg-brand-bg sticky top-0 z-50">
+    <nav className="w-full border-b border-brand-border bg-brand-bg sticky top-0 z-50 relative">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <span className="w-6 h-6 rounded bg-brand-amberDark flex-shrink-0" aria-hidden="true" />
           <span className="text-brand-heading font-semibold text-lg tracking-tight">DefiLords</span>
         </Link>
 
-        <div className="flex items-center gap-6">
+        {/* Desktop / tablet — inline cluster */}
+        <div className="hidden sm:flex items-center gap-6">
           <Link
             href="#sessions"
-            className="text-brand-body hover:text-brand-heading text-sm transition-colors hidden sm:block"
+            className="text-brand-body hover:text-brand-heading text-sm transition-colors"
           >
             Sessions
           </Link>
           <Link
             href="#invest"
-            className="text-brand-body hover:text-brand-heading text-sm transition-colors hidden sm:block"
+            className="text-brand-body hover:text-brand-heading text-sm transition-colors"
           >
             AI Vaults
           </Link>
@@ -41,7 +43,7 @@ export async function Navbar() {
               {session.role === 'owner' && (
                 <Link
                   href="/admin"
-                  className="text-brand-amber hover:text-brand-amberDark text-sm font-semibold transition-colors hidden sm:block"
+                  className="text-brand-amber hover:text-brand-amberDark text-sm font-semibold transition-colors"
                 >
                   Dashboard
                 </Link>
@@ -57,6 +59,14 @@ export async function Navbar() {
             </Link>
           )}
         </div>
+
+        {/* Mobile — hamburger + full-width dropdown */}
+        <MobileNav
+          isLoggedIn={!!session}
+          isOwner={session?.role === 'owner'}
+          name={session?.name ?? ''}
+          email={session?.email ?? ''}
+        />
       </div>
     </nav>
   )

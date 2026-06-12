@@ -65,7 +65,7 @@ export function SessionContent({ sessionId }: SessionContentProps) {
               href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center px-5 py-3 rounded-lg border border-brand-border bg-brand-surface text-brand-heading font-medium text-sm hover:border-brand-amberDark transition-colors"
+              className="flex flex-1 min-h-[48px] items-center justify-center text-center px-5 py-3 rounded-lg border border-brand-border bg-brand-surface text-brand-heading font-medium text-sm hover:border-brand-amberDark transition-colors"
             >
               Contribute on GitHub →
             </Link>
@@ -73,7 +73,7 @@ export function SessionContent({ sessionId }: SessionContentProps) {
               href={AI_VAULTS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 text-center px-5 py-3 rounded-lg border border-brand-greenBorder bg-brand-greenDeep text-brand-green font-medium text-sm hover:opacity-80 transition-opacity"
+              className="flex flex-1 min-h-[48px] items-center justify-center text-center px-5 py-3 rounded-lg border border-brand-greenBorder bg-brand-greenDeep text-brand-green font-medium text-sm hover:opacity-80 transition-opacity"
             >
               Invest in AI Vaults →
             </Link>

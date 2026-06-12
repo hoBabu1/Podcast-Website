@@ -18,7 +18,7 @@ export function SessionBreadcrumb() {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 flex items-center gap-2 text-sm"
+      className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 flex flex-wrap items-center gap-2 text-sm"
     >
       <Link href="/" className="text-brand-body hover:text-brand-amber transition-colors">
         DefiLords
