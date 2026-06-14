@@ -30,7 +30,9 @@ export async function Navbar() {
             Sessions
           </Link>
           <Link
-            href="#invest"
+            href="https://aivaults.defilords.finance/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-brand-body hover:text-brand-heading text-sm transition-colors"
           >
             AI Vaults

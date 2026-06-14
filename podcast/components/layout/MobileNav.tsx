@@ -104,8 +104,9 @@ export function MobileNav({ isLoggedIn, isOwner, name, email }: MobileNavProps) 
               Sessions
             </Link>
             <Link
-              href="/#invest"
-              onClick={() => setOpen(false)}
+              href="https://aivaults.defilords.finance/"
+              target="_blank"
+              rel="noopener noreferrer"
               role="menuitem"
               className="flex min-h-[48px] items-center px-5 text-base text-brand-body hover:bg-brand-surface hover:text-brand-heading transition-colors"
             >
