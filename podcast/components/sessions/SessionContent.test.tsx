@@ -23,6 +23,18 @@ jest.mock('next/link', () => ({
   ),
 }))
 
+// useAuth is a client hook backed by AuthProvider — stub it for unit tests.
+jest.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: { email: 'test@example.com', userId: 'u1', name: 'Test' }, isOwner: false, isLoading: false }),
+}))
+
+// VideoPlayer fetches from the API on mount — stub it to a simple placeholder.
+jest.mock('./VideoPlayer', () => ({
+  VideoPlayer: ({ sessionId }: { sessionId: number }) => (
+    <div data-testid={`video-player-${sessionId}`} />
+  ),
+}))
+
 describe('SessionContent', () => {
   it('renders the correct title for each session', () => {
     for (const session of SESSIONS) {
@@ -34,10 +46,15 @@ describe('SessionContent', () => {
     }
   })
 
-  it('shows the Watch on Twitter button pointing at the session Twitter URL (new tab)', () => {
+  it('renders the VideoPlayer for the correct session', () => {
+    render(<SessionContent sessionId={2} />)
+    expect(screen.getByTestId('video-player-2')).toBeInTheDocument()
+  })
+
+  it('shows the Discuss on Twitter button pointing at the session Twitter URL (new tab)', () => {
     const session = SESSIONS[1] // session 2
     render(<SessionContent sessionId={session.id} />)
-    const link = screen.getByRole('link', { name: /watch on twitter/i })
+    const link = screen.getByRole('link', { name: /discuss on twitter/i })
     expect(link).toHaveAttribute('href', session.twitterUrl)
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))

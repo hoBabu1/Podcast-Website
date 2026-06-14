@@ -138,9 +138,10 @@ export async function getPayments(
 
   const { data, count } = await supabase
     .from('session_access')
-    .select('id, user_id, session_id, amount_usdc, tx_hash, chain_id, granted_at', {
-      count: 'exact',
-    })
+    .select(
+      'id, user_id, session_id, amount_usdc, token_symbol, token_address, tx_hash, chain_id, granted_at',
+      { count: 'exact' }
+    )
     .order('granted_at', { ascending: false })
     .range(from, to)
 
@@ -158,6 +159,8 @@ export async function getPayments(
     user_email: emailById.get(r.user_id) ?? '',
     session_id: r.session_id,
     amount_usdc: Number(r.amount_usdc),
+    token_symbol: (r.token_symbol ?? 'USDC') as 'USDC' | 'USDT',
+    token_address: r.token_address ?? '',
     tx_hash: r.tx_hash,
     chain_id: r.chain_id,
     granted_at: r.granted_at,

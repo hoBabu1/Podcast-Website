@@ -1,8 +1,25 @@
-// Base Sepolia testnet USDC — switch to 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 for mainnet
-// Address is set via NEXT_PUBLIC_USDC_ADDRESS in .env.local
-export const USDC_ADDRESS = (process.env.NEXT_PUBLIC_USDC_ADDRESS ?? '') as `0x${string}`
+export type SupportedToken = 'USDC' | 'USDT'
 
-export const USDC_ABI = [
+export const SUPPORTED_TOKENS: Record<
+  SupportedToken,
+  { symbol: SupportedToken; address: string; decimals: number; label: string }
+> = {
+  USDC: {
+    symbol: 'USDC',
+    address: process.env.NEXT_PUBLIC_USDC_ADDRESS!,
+    decimals: Number(process.env.NEXT_PUBLIC_USDC_DECIMALS ?? 18),
+    label: 'USDC',
+  },
+  USDT: {
+    symbol: 'USDT',
+    address: process.env.NEXT_PUBLIC_USDT_ADDRESS!,
+    decimals: Number(process.env.NEXT_PUBLIC_USDT_DECIMALS ?? 18),
+    label: 'USDT',
+  },
+}
+
+// Generic ERC20 transfer ABI — works for both USDC and USDT
+export const ERC20_ABI = [
   {
     name: 'transfer',
     type: 'function',
@@ -13,4 +30,15 @@ export const USDC_ABI = [
     ],
     outputs: [{ name: '', type: 'bool' }],
   },
+  {
+    name: 'decimals',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
 ] as const
+
+// Backward-compatibility aliases — existing imports of USDC_ADDRESS / USDC_ABI still compile
+export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS!
+export const USDC_ABI = ERC20_ABI

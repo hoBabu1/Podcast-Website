@@ -4,6 +4,8 @@ import { POST } from './route'
 process.env.SESSION_SECRET = 'a'.repeat(32)
 process.env.NEXT_PUBLIC_PAYMENT_ADDRESS = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'
 process.env.ALCHEMY_RPC_URL = 'https://alchemy.example.com'
+process.env.USDC_DECIMALS = '18'
+process.env.USDT_DECIMALS = '18'
 
 jest.mock('@/lib/auth/session', () => ({
   getSession: jest.fn(),
@@ -14,14 +16,16 @@ jest.mock('@/lib/supabase/server', () => ({
 }))
 
 jest.mock('@/lib/web3/verify', () => ({
-  verifyUsdcPayment: jest.fn(),
+  verifyERC20Payment: jest.fn(),
 }))
 
 import { getSession } from '@/lib/auth/session'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { verifyUsdcPayment } from '@/lib/web3/verify'
+import { verifyERC20Payment } from '@/lib/web3/verify'
 
-const VALID_TX = '0x' + 'a'.repeat(64)
+const VALID_TX    = '0x' + 'a'.repeat(64)
+const USDC_ADDR   = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
+const USDT_ADDR   = '0xaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAa'
 
 const mockSupabase = { from: jest.fn() }
 
@@ -33,12 +37,29 @@ function makeReq(body: unknown): NextRequest {
   })
 }
 
+function validUsdcBody(overrides: object = {}) {
+  return {
+    txHash: VALID_TX,
+    sessionId: 2,
+    tokenSymbol: 'USDC',
+    tokenAddress: USDC_ADDR,
+    ...overrides,
+  }
+}
+
 function mockAuthSession() {
   ;(getSession as jest.Mock).mockResolvedValue({
     email: 'user@example.com',
     userId: 'user-id',
     role: null,
   })
+}
+
+function mockNoExistingTx() {
+  mockSupabase.from.mockImplementation(() => ({
+    select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null }) }) }),
+    insert: () => Promise.resolve({ error: null }),
+  }))
 }
 
 beforeEach(() => {
@@ -49,19 +70,25 @@ beforeEach(() => {
 describe('POST /api/payment/verify', () => {
   it('returns 401 when not authenticated', async () => {
     ;(getSession as jest.Mock).mockResolvedValue(null)
-    const res = await POST(makeReq({ txHash: VALID_TX, sessionId: 2 }))
+    const res = await POST(makeReq(validUsdcBody()))
     expect(res.status).toBe(401)
   })
 
   it('returns 400 for invalid sessionId', async () => {
     mockAuthSession()
-    const res = await POST(makeReq({ txHash: VALID_TX, sessionId: 1 }))
+    const res = await POST(makeReq(validUsdcBody({ sessionId: 1 })))
     expect(res.status).toBe(400)
   })
 
   it('returns 400 for malformed txHash', async () => {
     mockAuthSession()
-    const res = await POST(makeReq({ txHash: 'not-a-hash', sessionId: 2 }))
+    const res = await POST(makeReq(validUsdcBody({ txHash: 'not-a-hash' })))
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for invalid tokenSymbol', async () => {
+    mockAuthSession()
+    const res = await POST(makeReq(validUsdcBody({ tokenSymbol: 'DAI' })))
     expect(res.status).toBe(400)
   })
 
@@ -70,7 +97,7 @@ describe('POST /api/payment/verify', () => {
     mockSupabase.from.mockImplementation(() => ({
       select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { id: 'existing' } }) }) }),
     }))
-    const res = await POST(makeReq({ txHash: VALID_TX, sessionId: 2 }))
+    const res = await POST(makeReq(validUsdcBody()))
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toBe('Payment already processed')
@@ -78,19 +105,17 @@ describe('POST /api/payment/verify', () => {
 
   it('returns 400 when on-chain verification fails', async () => {
     mockAuthSession()
-    mockSupabase.from.mockImplementation(() => ({
-      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null }) }) }),
-    }))
-    ;(verifyUsdcPayment as jest.Mock).mockResolvedValue({ valid: false, reason: 'wrong_amount' })
-    const res = await POST(makeReq({ txHash: VALID_TX, sessionId: 2 }))
+    mockNoExistingTx()
+    ;(verifyERC20Payment as jest.Mock).mockResolvedValue({ valid: false, reason: 'wrong_amount' })
+    const res = await POST(makeReq(validUsdcBody()))
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toBe('Payment verification failed')
   })
 
-  it('returns 200 and inserts session_access on valid payment', async () => {
+  it('returns 200 and inserts session_access with token columns on valid USDC payment', async () => {
     mockAuthSession()
-    ;(verifyUsdcPayment as jest.Mock).mockResolvedValue({ valid: true })
+    ;(verifyERC20Payment as jest.Mock).mockResolvedValue({ valid: true })
 
     let insertedRow: unknown = null
     mockSupabase.from.mockImplementation((table: string) => {
@@ -103,28 +128,54 @@ describe('POST /api/payment/verify', () => {
           },
         }
       }
-      if (table === 'users') {
-        return {
-          select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { id: 'user-id' } }) }) }),
-        }
-      }
     })
 
-    const res = await POST(makeReq({ txHash: VALID_TX, sessionId: 2 }))
+    const res = await POST(makeReq(validUsdcBody()))
     expect(res.status).toBe(200)
-    const data = await res.json()
-    expect(data).toEqual({ success: true })
+    expect(await res.json()).toEqual({ success: true })
     expect(insertedRow).toMatchObject({
       session_id: 2,
       tx_hash: VALID_TX,
       chain_id: 84532,
       amount_usdc: '50',
+      token_symbol: 'USDC',
+      token_address: USDC_ADDR,
     })
+  })
+
+  it('returns 200 on valid USDT payment', async () => {
+    mockAuthSession()
+    ;(verifyERC20Payment as jest.Mock).mockResolvedValue({ valid: true })
+
+    let insertedRow: unknown = null
+    mockSupabase.from.mockImplementation(() => ({
+      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null }) }) }),
+      insert: (row: unknown) => {
+        insertedRow = row
+        return Promise.resolve({ error: null })
+      },
+    }))
+
+    const res = await POST(makeReq(validUsdcBody({ tokenSymbol: 'USDT', tokenAddress: USDT_ADDR })))
+    expect(res.status).toBe(200)
+    expect(insertedRow).toMatchObject({
+      token_symbol: 'USDT',
+      token_address: USDT_ADDR,
+    })
+  })
+
+  it('passes correct tokenAddress and decimals to verifyERC20Payment', async () => {
+    mockAuthSession()
+    ;(verifyERC20Payment as jest.Mock).mockResolvedValue({ valid: true })
+    mockNoExistingTx()
+
+    await POST(makeReq(validUsdcBody({ tokenSymbol: 'USDT', tokenAddress: USDT_ADDR })))
+    expect(verifyERC20Payment).toHaveBeenCalledWith(VALID_TX, 2, USDT_ADDR, 18)
   })
 
   it('retries a transient insert failure and returns 200 on eventual success', async () => {
     mockAuthSession()
-    ;(verifyUsdcPayment as jest.Mock).mockResolvedValue({ valid: true })
+    ;(verifyERC20Payment as jest.Mock).mockResolvedValue({ valid: true })
 
     let attempts = 0
     mockSupabase.from.mockImplementation(() => ({
@@ -137,21 +188,21 @@ describe('POST /api/payment/verify', () => {
       },
     }))
 
-    const res = await POST(makeReq({ txHash: VALID_TX, sessionId: 2 }))
+    const res = await POST(makeReq(validUsdcBody()))
     expect(res.status).toBe(200)
     expect(attempts).toBe(3)
   })
 
   it('returns 503 retryable when the insert fails after all retries', async () => {
     mockAuthSession()
-    ;(verifyUsdcPayment as jest.Mock).mockResolvedValue({ valid: true })
+    ;(verifyERC20Payment as jest.Mock).mockResolvedValue({ valid: true })
 
     mockSupabase.from.mockImplementation(() => ({
       select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null }) }) }),
       insert: () => Promise.resolve({ error: { message: 'fetch failed' } }),
     }))
 
-    const res = await POST(makeReq({ txHash: VALID_TX, sessionId: 2 }))
+    const res = await POST(makeReq(validUsdcBody()))
     expect(res.status).toBe(503)
     const data = await res.json()
     expect(data.retryable).toBe(true)

@@ -1,5 +1,8 @@
+'use client'
 import Link from 'next/link'
 import { SESSIONS } from '@/constants/sessions'
+import { useAuth } from '@/hooks/useAuth'
+import { VideoPlayer } from './VideoPlayer'
 
 // Placeholder external links for session 3 — finalised in chunk 9
 // (GitHub repo URL + AI Vaults deposit page URL).
@@ -16,6 +19,7 @@ interface SessionContentProps {
  * shows content, it never gates it.
  */
 export function SessionContent({ sessionId }: SessionContentProps) {
+  const { user } = useAuth()
   const session = SESSIONS.find((s) => s.id === sessionId)
   if (!session) return null
 
@@ -23,14 +27,19 @@ export function SessionContent({ sessionId }: SessionContentProps) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
+      {/* Embedded video — full width, 16:9 */}
+      <div className="mb-8 sm:mb-10">
+        <VideoPlayer sessionId={sessionId} userEmail={user?.email ?? ''} />
+      </div>
+
       <span className="text-brand-amber text-xs font-mono font-semibold tracking-widest uppercase">
         Session {session.id}
       </span>
 
-      <h1 className="text-brand-heading text-3xl sm:text-4xl font-bold leading-tight tracking-tight mt-3 mb-4">
+      <h1 className="text-brand-heading text-xl sm:text-2xl font-bold leading-tight tracking-tight mt-3 mb-4">
         {session.title}
       </h1>
-      <p className="text-brand-body text-lg leading-relaxed mb-10">{session.description}</p>
+      <p className="text-brand-body text-lg leading-relaxed mb-8 sm:mb-10">{session.description}</p>
 
       {/* Primary action — the Twitter/X link. Opens in a new tab so the user
           doesn't lose their place on the site. */}
@@ -38,9 +47,9 @@ export function SessionContent({ sessionId }: SessionContentProps) {
         href={session.twitterUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-8 py-4 rounded-xl bg-brand-amber text-brand-bg font-semibold text-lg hover:bg-brand-amberDark transition-colors"
+        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-8 min-h-[48px] rounded-xl bg-brand-amber text-brand-bg font-semibold text-lg hover:bg-brand-amberDark transition-colors"
       >
-        Watch on Twitter →
+        Discuss on Twitter →
       </Link>
 
       {/* Session 1 (free) — gentle upsell back to the paid sessions. */}

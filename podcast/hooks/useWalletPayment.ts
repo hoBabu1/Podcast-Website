@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount, useWriteContract } from 'wagmi'
-import { USDC_ADDRESS, USDC_ABI } from '@/lib/web3/contracts'
+import { SUPPORTED_TOKENS, ERC20_ABI } from '@/lib/web3/contracts'
+import type { SupportedToken } from '@/lib/web3/contracts'
 import { SESSIONS } from '@/constants/sessions'
 import { useAuthContext } from '@/components/auth/AuthProvider'
 
@@ -18,7 +19,11 @@ export type PaymentStatus =
 
 // A payment whose on-chain transfer succeeded but whose server-side verification
 // has not yet been recorded. Held so the user can re-verify WITHOUT paying again.
-type PendingPayment = { txHash: `0x${string}`; sessionId: 2 | 3 }
+type PendingPayment = {
+  txHash: `0x${string}`
+  sessionId: 2 | 3
+  token: SupportedToken
+}
 
 // Maps raw wallet/RPC errors (which can be huge viem dumps) to a short, friendly
 // line for the UI. Display-only — it never changes what the payment flow does.
@@ -30,19 +35,17 @@ function friendlyPaymentError(err: unknown): string {
     return 'Transaction cancelled.'
   }
   if (lower.includes('insufficient funds')) {
-    return 'Insufficient USDC balance.'
+    return 'Insufficient balance.'
   }
   if (lower.includes('chain') || lower.includes('network')) {
-    return 'Wrong network. Please switch to Base Sepolia.'
+    return 'Switch to Base Sepolia.'
   }
-  // Server-side verification already returns short, user-safe messages (e.g. the
-  // retryable "payment received but couldn't be saved") — keep those as-is so the
-  // user isn't wrongly told the transaction failed. Only fall back to the generic
-  // line for long/raw errors.
+  // Server-side verification already returns short, user-safe messages — keep those
+  // as-is so the user isn't wrongly told the transaction failed.
   if (msg && msg.length <= 80 && !msg.includes('\n')) {
     return msg
   }
-  return 'Transaction failed. Please try again.'
+  return 'Transaction failed. Try again.'
 }
 
 export function useWalletPayment() {
@@ -57,18 +60,28 @@ export function useWalletPayment() {
   // Verify a txHash with the server. Separated from `pay` so a transient verify
   // failure can be retried against the SAME on-chain payment instead of charging
   // the user a second time.
-  async function verify(txHash: `0x${string}`, sessionId: 2 | 3): Promise<void> {
+  async function verify(
+    txHash: `0x${string}`,
+    sessionId: 2 | 3,
+    token: SupportedToken
+  ): Promise<void> {
     setStatus('verifying')
+    const tokenConfig = SUPPORTED_TOKENS[token]
     const verifyRes = await fetch('/api/payment/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ txHash, sessionId }),
+      body: JSON.stringify({
+        txHash,
+        sessionId,
+        tokenSymbol: token,
+        tokenAddress: tokenConfig.address,
+      }),
     })
 
     if (!verifyRes.ok) {
       const data = (await verifyRes.json()) as { error?: string; retryable?: boolean }
       // Keep the payment around so the user can retry verification without re-paying.
-      setPending({ txHash, sessionId })
+      setPending({ txHash, sessionId, token })
       const err = new Error(data.error ?? 'Payment verification failed') as Error & {
         retryable?: boolean
       }
@@ -81,10 +94,9 @@ export function useWalletPayment() {
     setStatus('success')
     // Update shared access state so the homepage cards reflect the unlock.
     await refresh()
-    router.push(`/sessions/${sessionId}`)
   }
 
-  async function pay(sessionId: 2 | 3): Promise<void> {
+  async function pay(sessionId: 2 | 3, token: SupportedToken): Promise<void> {
     setError(null)
     setStatus('idle')
 
@@ -99,7 +111,11 @@ export function useWalletPayment() {
     }
 
     const session = SESSIONS.find((s) => s.id === sessionId)
-    if (!session || session.isFree || !session.priceUSDC) return
+    if (!session || session.isFree) return
+
+    const tokenConfig = SUPPORTED_TOKENS[token]
+    const decimals = tokenConfig.decimals
+    const amount = BigInt(session.price) * BigInt(10 ** decimals)
 
     try {
       setStatus('saving-wallet')
@@ -112,16 +128,16 @@ export function useWalletPayment() {
 
       setStatus('sending-payment')
       const hash = await writeContractAsync({
-        address: USDC_ADDRESS,
-        abi: USDC_ABI,
+        address: tokenConfig.address as `0x${string}`,
+        abi: ERC20_ABI,
         functionName: 'transfer',
         args: [
           process.env.NEXT_PUBLIC_PAYMENT_ADDRESS as `0x${string}`,
-          BigInt(session.priceUSDC),
+          amount,
         ],
       })
 
-      await verify(hash, sessionId)
+      await verify(hash, sessionId, token)
     } catch (err) {
       console.error('[useWalletPayment]', err)
       setError(friendlyPaymentError(err))
@@ -135,7 +151,7 @@ export function useWalletPayment() {
     if (!pending) return
     setError(null)
     try {
-      await verify(pending.txHash, pending.sessionId)
+      await verify(pending.txHash, pending.sessionId, pending.token)
     } catch (err) {
       console.error('[useWalletPayment] retry', err)
       setError(friendlyPaymentError(err))

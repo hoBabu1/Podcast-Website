@@ -49,6 +49,8 @@ Records which paid sessions a user has unlocked. A row is inserted only after se
 | `tx_hash` | `text` | Unique, not null — prevents replay attacks |
 | `chain_id` | `int` | Default `8453` (Base mainnet), not null |
 | `amount_usdc` | `numeric(20, 6)` | Not null — actual amount paid, stored for audit |
+| `token_symbol` | `text` | Not null, default `'USDC'`, check `in ('USDC', 'USDT')` — token used for payment |
+| `token_address` | `text` | Not null, default USDC Sepolia address — contract address of the token used |
 | `granted_at` | `timestamptz` | Default `now()`, not null |
 
 **Constraints:**

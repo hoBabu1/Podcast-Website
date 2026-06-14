@@ -19,6 +19,8 @@ export type AdminPayment = {
   user_email: string
   session_id: number
   amount_usdc: number
+  token_symbol: 'USDC' | 'USDT'
+  token_address: string
   tx_hash: string
   chain_id: number
   granted_at: string

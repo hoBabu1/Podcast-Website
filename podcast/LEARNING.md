@@ -5,6 +5,115 @@ If you are new to the backend or just vibe-coding along, this is your guide to u
 
 ---
 
+## USDT as a Second Payment Option (Multi-Token Support)
+
+### What was built
+
+We added USDT as a second payment token alongside USDC. Users can now choose which token they want to use when unlocking a paid session. A new payment modal pops up when they click the unlock button, shows a token selector, and guides them through the payment. The admin dashboard now shows separate USDC and USDT columns in the payment history table.
+
+---
+
+### What ERC20 tokens are, and why USDC and USDT share the same ABI
+
+An ERC20 token is a smart contract on Ethereum (or a compatible chain like Base) that follows a standard interface. "ERC20" is just the name of the standard — it defines a set of functions every compliant token must have: `transfer`, `approve`, `balanceOf`, `decimals`, and a few others.
+
+USDC and USDT are both ERC20 tokens. That means they have the same function names and the same signatures. When you call `token.transfer(to, amount)` it works exactly the same way on both — you just point it at a different contract address. This is why a single `ERC20_ABI` (the ABI describes the function signatures) works for both. We don't need separate ABIs.
+
+The ABI is just the recipe book. The contract address is the specific kitchen. Same recipe, different kitchen.
+
+---
+
+### What token decimals are, and why they are in env vars
+
+On-chain, token amounts are always stored as whole integers — there are no decimals in Solidity. So "50 USDC" is not stored as `50` — it is stored as `50 × 10^decimals`. For a token with 18 decimals (like the testnet USDC we use), "50 USDC" is stored as `50000000000000000000` (50 followed by 18 zeros).
+
+Why env vars? Because the number of decimals is a property of a specific token contract deployment, not something baked into the application logic. If we ever switch to a different USDC deployment (or if a USDT contract uses 6 decimals instead of 18), we can change `USDC_DECIMALS` or `USDT_DECIMALS` in the env without touching any code. The verification route reads the decimals from the env at runtime and passes them into the verification function, which uses them to calculate the expected on-chain amount.
+
+Both the client (to build the transaction) and the server (to verify it) use the same decimals. If they disagree, the transfer amount won't match and verification fails — which is exactly what you want as a security check.
+
+---
+
+### What a payment modal is, and why it is better UX than an inline button
+
+An **inline button** (the old "Pay $50 USDC" button on the session card) has no room to show extra choices or explain what is about to happen. You click it, MetaMask opens immediately, and if you are confused about which token to use or what address you are sending to — you have nowhere to check.
+
+A **payment modal** is a focused overlay that appears over the page when the user clicks "Unlock Session N →". It has enough space to:
+
+1. Let the user choose their token (USDC or USDT) without leaving the page.
+2. Show exactly how much they will pay and to which wallet address.
+3. Guide them through each step with a status message ("Confirm in MetaMask...", "Verifying payment...").
+4. Show a friendly error if something goes wrong, with a "Retry verification" button if the transaction went through but the server had a hiccup.
+5. Close automatically after a success message — so the user sees confirmation before the modal disappears.
+
+This pattern (a confirmation step before an irreversible action) is standard in any financial app. It reduces accidental payments and makes the user feel in control.
+
+---
+
+## YouTube Video Embedding with Watermark Protection
+
+### What was built
+
+We added embedded YouTube videos to each session content page. Instead of just linking users to Twitter/X, they now watch the video directly on the site. A faint watermark with their email address covers the video area so that even if someone screenshots or records their screen, the content is traceable to them. The video ID is kept secret on the server so it can't be copied from the browser's DevTools.
+
+---
+
+### What "YouTube unlisted" means and why it's used
+
+A YouTube video can be **public** (anyone can find it via search), **private** (only the owner can see it), or **unlisted** (anyone with the direct link can watch it, but it doesn't appear in search results or on the channel page).
+
+Unlisted is the right choice here because:
+- You don't want random people finding the paid session videos on YouTube
+- You still need YouTube to host the video (free, global CDN, great mobile playback)
+- Access control happens on your site — only logged-in, paid users get the embed URL
+
+The raw video ID is kept server-side and never exposed to the browser. Even if a user opens DevTools and looks at network requests, they only see the embed URL (which includes the ID) — and they already have access to that session anyway.
+
+---
+
+### What an iframe embed is vs a redirect link
+
+A **redirect link** sends the user away from your site to YouTube's website. The user leaves, sees YouTube's UI, can share the URL freely, and you have no control over what happens next.
+
+An **iframe embed** keeps the user on your site. The `<iframe>` is a rectangular "window" that loads YouTube's player inside your page. From the user's perspective they're watching a video on your site. From YouTube's perspective they're playing a video on an external site. The embed URL uses `youtube-nocookie.com` (YouTube's privacy-enhanced domain) which doesn't set tracking cookies unless the user hits play.
+
+The key difference: with an embed, you can overlay things on top of the video (like the watermark canvas), disable right-click, and control the UI around it. You can't do any of that with a redirect link.
+
+---
+
+### Why the video ID is served from the server, not the frontend
+
+If you put `YOUTUBE_SESSION_2_ID=abc123xyz` in a `NEXT_PUBLIC_` environment variable, that value gets bundled into the JavaScript that ships to every user's browser. Anyone can open DevTools → Sources and find it. They could then go directly to `youtube.com/watch?v=abc123xyz` without ever paying.
+
+By keeping the ID in a server-only environment variable (no `NEXT_PUBLIC_` prefix), it only exists on the server. The API route reads it, builds the embed URL, and returns just the URL. The raw ID never travels to the browser — users only see the final embed URL, which already requires them to be logged in and paid to access.
+
+---
+
+### What the canvas watermark does and why it regenerates
+
+The watermark is a `<canvas>` element (an HTML drawing surface) that sits on top of the video using `position: absolute; inset: 0`. It draws the user's email address + "DefiLords" in a diagonal tiled pattern across the entire video area at 15% amber opacity — faint enough to watch through, visible enough to read on a screenshot.
+
+Why canvas instead of a regular HTML element? Because a `<div>` overlay can be removed in one click in DevTools: right-click → Inspect → Delete. Done. A canvas element is harder — even if someone removes it, the code redraws it every 30 seconds (via `setInterval`). So even if a user deletes the canvas in DevTools, it comes back 30 seconds later without a page reload. It also redraws on window resize so the tiles always cover the full area.
+
+This isn't unbreakable security — a determined person with screen recording software can always capture what's on screen. It's a deterrent: it makes screenshots and recordings instantly traceable to the specific account that shared them.
+
+---
+
+### What `aspect-ratio: 16/9` means and why it's better than fixed heights on mobile
+
+16:9 is the standard widescreen aspect ratio (16 units wide, 9 units tall). Every modern YouTube video is filmed in this ratio. If you set a fixed height like `height: 400px`, the video looks fine on a 1280px desktop but way too tall on a 375px phone — it might take up the entire visible screen before the user even reads the title.
+
+`style={{ aspectRatio: '16/9' }}` combined with `width: 100%` means: "make the element full width, and automatically calculate the height so the ratio stays 16:9." On a 375px wide phone, the video becomes 375 × 211px. On a 1280px desktop, it becomes 672 × 378px (constrained by the `max-w-2xl` container). The height scales automatically for any screen size — no media queries, no JavaScript, no fixed numbers.
+
+---
+
+### What `playsinline` does on iOS
+
+By default, when a video starts playing on iOS Safari, it immediately fullscreens — the phone takes over the entire screen and the video plays in the system video player, outside your app entirely. The user loses the watermark, the site UI, everything.
+
+Adding `playsinline=1` to the YouTube embed URL tells iOS to play the video inside the iframe, in the page, where it belongs. The watermark stays visible, the user stays on your site, and the experience is the same as on desktop.
+
+---
+
 ## Chunk 1 — The Foundation
 
 ### What was built

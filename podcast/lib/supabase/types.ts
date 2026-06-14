@@ -26,6 +26,8 @@ export interface SessionAccessRow {
   tx_hash: string
   chain_id: number
   amount_usdc: string
+  token_symbol: 'USDC' | 'USDT'
+  token_address: string
   granted_at: string
 }
 
@@ -35,6 +37,8 @@ export interface SessionAccessInsert {
   tx_hash: string
   chain_id?: number
   amount_usdc: string
+  token_symbol: 'USDC' | 'USDT'
+  token_address: string
 }
 
 export interface UserRoleRow {

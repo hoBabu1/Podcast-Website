@@ -23,7 +23,8 @@ export function PaymentTable({
             <tr>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Session</th>
-              <th className="px-4 py-3 font-medium">Amount (USDC)</th>
+              <th className="px-4 py-3 font-medium">USDC</th>
+              <th className="px-4 py-3 font-medium">USDT</th>
               <th className="px-4 py-3 font-medium">Tx Hash</th>
               <th className="px-4 py-3 font-medium">Date</th>
             </tr>
@@ -31,7 +32,7 @@ export function PaymentTable({
           <tbody>
             {payments.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-brand-muted">
+                <td colSpan={6} className="px-4 py-8 text-center text-brand-muted">
                   No payments yet.
                 </td>
               </tr>
@@ -40,8 +41,23 @@ export function PaymentTable({
                 <tr key={payment.id} className="border-t border-brand-border">
                   <td className="px-4 py-3 text-brand-body">{payment.user_email}</td>
                   <td className="px-4 py-3 text-brand-heading">Session {payment.session_id}</td>
-                  <td className="px-4 py-3 text-brand-amber font-semibold whitespace-nowrap">
-                    ${payment.amount_usdc.toLocaleString()}
+                  <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                    {payment.token_symbol === 'USDC' ? (
+                      <span className="text-brand-amber">
+                        ${payment.amount_usdc.toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="text-brand-muted">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                    {payment.token_symbol === 'USDT' ? (
+                      <span className="text-brand-amber">
+                        ${payment.amount_usdc.toLocaleString()}
+                      </span>
+                    ) : (
+                      <span className="text-brand-muted">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <a

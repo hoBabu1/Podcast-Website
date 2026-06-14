@@ -14,6 +14,30 @@ Rules:
 
 ---
 
+## M004 — 2026-06-14 — token support on session_access
+
+**Status:** ✅ applied 2026-06-14
+
+```sql
+-- ============================================================
+-- M004 — add token support to session_access
+-- DefiLords Podcast — 2026-06-14
+-- Paste into Supabase SQL Editor and run in one click.
+-- ============================================================
+
+alter table public.session_access
+  add column token_symbol text not null default 'USDC'
+    check (token_symbol in ('USDC', 'USDT')),
+  add column token_address text not null default '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+
+comment on column public.session_access.token_symbol is 'Token used for payment — USDC or USDT';
+comment on column public.session_access.token_address is 'Contract address of the token used';
+
+-- ============================================================
+```
+
+---
+
 ## M003 — 2026-06-07 — user_wallets table
 
 **Status:** ✅ applied 2026-06-07

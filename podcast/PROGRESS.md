@@ -1,6 +1,125 @@
 # PROGRESS
 
-**Project status: ✅ COMPLETE — all 10 chunks done.**
+**Project status: ✅ COMPLETE — all 10 chunks done + YouTube video embedding + USDT multi-token payment added.**
+
+---
+
+## USDT as second payment option (multi-token)
+
+**Status:** Complete · M004 applied. No auth, session-access, or video player code touched. `npm test` **126/126** passing. `npm run build` green.
+
+### What was built
+
+- **`database/MIGRATIONS.md`** — M004 added: `token_symbol` (text, default 'USDC', check in ('USDC','USDT')) and `token_address` (text) columns added to `session_access`. Applied 2026-06-14.
+- **`database/SCHEMA.md`** — `session_access` table updated to document the two new columns.
+- **`.env.local`** — Added `NEXT_PUBLIC_USDC_ADDRESS` (corrected to Base Sepolia address), `NEXT_PUBLIC_USDC_DECIMALS=18`, `NEXT_PUBLIC_USDT_ADDRESS=paste_usdt_address_here`, `NEXT_PUBLIC_USDT_DECIMALS=18`, `USDC_DECIMALS=18`, `USDT_DECIMALS=18`.
+- **`lib/web3/contracts.ts`** — Replaced single USDC config with `SUPPORTED_TOKENS` map (`SupportedToken` type, `ERC20_ABI` with transfer + decimals). Backward-compat aliases `USDC_ADDRESS` and `USDC_ABI` kept.
+- **`lib/web3/verify.ts`** — `verifyUsdcPayment` renamed to `verifyERC20Payment(txHash, sessionId, tokenAddress, decimals)`. Hardcoded `AMOUNT_BY_SESSION` bigints replaced with `BigInt(sessionPrice) * BigInt(10 ** decimals)`. Filters logs by `tokenAddress` param instead of hardcoded USDC address. Backward-compat alias for `verifyUsdcPayment` kept.
+- **`lib/supabase/types.ts`** — `token_symbol` and `token_address` added to `SessionAccessRow` and `SessionAccessInsert`.
+- **`hooks/useWalletPayment.ts`** — `pay(sessionId, token)` now takes `SupportedToken` as second param. Amount calculated from `session.price * 10^decimals` (via `SUPPORTED_TOKENS[token].decimals`). Token address used for contract call. `verify()` sends `tokenSymbol` and `tokenAddress` to the API. `retryVerification` carries the token through. `router.push` to session page removed — modal handles success UX.
+- **`app/api/payment/verify/route.ts`** — Zod schema adds `tokenSymbol: z.enum(['USDC','USDT'])` and `tokenAddress: z.string().startsWith('0x')`. Decimals read from `USDC_DECIMALS` / `USDT_DECIMALS` env. `verifyERC20Payment` called with `tokenAddress` and `decimals`. Insert now includes `token_symbol` and `token_address`.
+- **`types/admin.ts`** — `AdminPayment` type gets `token_symbol: 'USDC' | 'USDT'` and `token_address: string`.
+- **`lib/admin/queries.ts`** — `getPayments()` selects `token_symbol, token_address` and maps them into `AdminPayment`.
+- **`components/sessions/TokenSelector.tsx`** (new) — Two pill buttons (USDC / USDT), equal width grid, amber styling on selected, muted on unselected. `min-h-[56px]`, `w-full`, `text-sm`.
+- **`components/sessions/PaymentModal.tsx`** (new) — Modal triggered by "Unlock Session N →". States: idle (token selector + Confirm & Pay), sending (spinner + "Confirm in MetaMask..."), verifying (spinner + "Verifying payment..."), success ("✓ Payment successful!" + auto-close after 2 s), error (message + Retry). Closes on backdrop click and Escape. Full-width on mobile, `sm:max-w-md` on desktop.
+- **`components/sessions/SessionCard.tsx`** — Inline `useWalletPayment` and `PaymentProgress` removed. "Pay $X USDC" button replaced by "Unlock Session N →" which opens `PaymentModal`. Price badge updated to "$ USDC / USDT". Error and retry now live inside the modal.
+- **`components/admin/PaymentTable.tsx`** — "Amount (USDC)" column split into separate USDC and USDT columns. Shows amount in the matching column and "—" in the other. `colSpan` updated to 6.
+
+### Files created or changed
+- `database/MIGRATIONS.md` — M004 added and marked applied
+- `database/SCHEMA.md` — session_access updated
+- `.env.local` — new USDC/USDT env vars
+- `lib/web3/contracts.ts` — SupportedToken, SUPPORTED_TOKENS, ERC20_ABI
+- `lib/web3/verify.ts` — verifyERC20Payment, backward-compat alias
+- `lib/web3/verify.test.ts` — rewritten for new signature + 3 new USDT tests
+- `lib/web3/contracts.test.ts` — updated + new SUPPORTED_TOKENS and ERC20_ABI tests
+- `lib/supabase/types.ts` — token_symbol, token_address on SessionAccessRow/Insert
+- `hooks/useWalletPayment.ts` — token param, amount calc, verify body
+- `app/api/payment/verify/route.ts` — tokenSymbol/tokenAddress in schema + insert
+- `app/api/payment/verify/route.test.ts` — updated + USDT tests
+- `types/admin.ts` — AdminPayment gets token_symbol, token_address
+- `lib/admin/queries.ts` — select + map token_symbol, token_address
+- `lib/admin/queries.test.ts` — mock data + assertion updated for new fields
+- `components/sessions/TokenSelector.tsx` — created
+- `components/sessions/TokenSelector.test.tsx` — created (6 tests)
+- `components/sessions/PaymentModal.tsx` — created
+- `components/sessions/SessionCard.tsx` — updated (modal-based payment)
+- `components/admin/PaymentTable.tsx` — USDC / USDT columns
+
+### Decisions made
+- **`router.push` removed from `useWalletPayment`** — the old flow auto-navigated to the session page after payment. The modal-based flow shows a 2-second success state then closes; the session card flips to "✓ Access granted" via the shared `refresh()` already called inside `verify()`. No navigation change needed.
+- **`PaymentModal` owns its own `useWalletPayment` instance** — this keeps the modal self-contained and stateless from the card's perspective. The card only controls `isOpen`.
+- **Retry logic moved inside the modal** — the old "Payment sent — retry unlock" button in `SessionCard` is replaced by a "Retry verification" button inside the modal, which appears when `canRetryVerification` is true.
+- **`USDC_ADDRESS` and `USDC_ABI` kept as aliases** — any future callers that import these still compile; they resolve to `SUPPORTED_TOKENS.USDC.address` and `ERC20_ABI` respectively.
+- **`verifyUsdcPayment` kept as alias** — backward-compat export in `verify.ts` calls `verifyERC20Payment` with the USDC address from env.
+- **Decimals on server and client both come from env** — `NEXT_PUBLIC_USDC/USDT_DECIMALS` on the client side (via `SUPPORTED_TOKENS`), `USDC/USDT_DECIMALS` (no `NEXT_PUBLIC_`) on the server side in the verify route. Changing decimals requires only an env var change, not a code deploy.
+- **USDT address left as placeholder** — `NEXT_PUBLIC_USDT_ADDRESS=paste_usdt_address_here` must be filled before testing USDT payments.
+
+### New env vars introduced
+```
+# .env.local (and Vercel)
+NEXT_PUBLIC_USDC_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+NEXT_PUBLIC_USDC_DECIMALS=18
+NEXT_PUBLIC_USDT_ADDRESS=paste_usdt_address_here   ← owner must fill this
+NEXT_PUBLIC_USDT_DECIMALS=18
+USDC_DECIMALS=18
+USDT_DECIMALS=18
+```
+
+### Verification
+- `npm test` — **126/126** passing (21 suites; +6 TokenSelector tests; +3 new verify tests; route + queries tests updated).
+- `npm run build` — green. All routes compile. No type errors.
+
+### Before USDT can be tested on testnet
+1. Find the USDT contract address on Base Sepolia.
+2. Paste it into `NEXT_PUBLIC_USDT_ADDRESS` in `.env.local`.
+3. Mirror the value in Vercel env vars.
+4. Test a USDT transfer on testnet.
+
+---
+
+---
+
+## YouTube video embedding with watermark protection
+
+**Status:** Complete · New API route + 2 new components + SessionContent updated. No existing API routes, payment logic, auth logic, or session access logic touched. Verified at 375px and 1280px — desktop unchanged except SessionContent now shows video. `npm test` **110/110** passing. `npm run build` green.
+
+### What was built
+
+- **`app/api/session/video/route.ts`** (new) — GET endpoint that authenticates the user via session cookie, checks access (session 1 always free; sessions 2/3 via `hasSessionAccess`), reads the video ID from server-only env vars, and returns only the full embed URL (never the raw ID). Returns `{ embedUrl, isPlaceholder }`.
+- **`components/sessions/VideoWatermark.tsx`** (new, client) — canvas overlay that tiles the user's email + "DefiLords" across the video at 15% amber opacity, rotated −35°. Redraws every 30 seconds (so DevTools removal doesn't last) and on window resize. `pointer-events: none` so it never blocks playback.
+- **`components/sessions/VideoPlayer.tsx`** (new, client) — fetches the embed URL from the API on mount. Four states: loading (animate-pulse skeleton), placeholder (🎬 "Video Coming Soon" with Twitter link), video (YouTube iframe + watermark), error (red text). Aspect ratio 16:9 via `style={{ aspectRatio: '16/9' }}` — no fixed heights. Right-click disabled. `allowFullScreen` and `playsinline=1` in the embed URL for mobile.
+- **`components/sessions/SessionContent.tsx`** (updated) — converted to `'use client'` to use `useAuth()` hook. `VideoPlayer` added above the session title. Twitter button text changed from "Watch on Twitter →" to "Discuss on Twitter →". Buttons follow `w-full sm:w-auto min-h-[48px]` mobile-first rules.
+
+### Files created or changed
+- `app/api/session/video/route.ts` — created
+- `app/api/session/video/route.test.ts` — created (7 tests)
+- `components/sessions/VideoWatermark.tsx` — created
+- `components/sessions/VideoPlayer.tsx` — created
+- `components/sessions/SessionContent.tsx` — updated ('use client', useAuth, VideoPlayer, "Discuss on Twitter")
+- `components/sessions/SessionContent.test.tsx` — updated (mocks for useAuth + VideoPlayer, "discuss" assertion, +1 VideoPlayer render test)
+- `.env.local` — added `YOUTUBE_SESSION_1_ID`, `YOUTUBE_SESSION_2_ID`, `YOUTUBE_SESSION_3_ID` (all placeholder values)
+
+### Decisions made
+- **Video ID never exposed to the client** — the `/api/session/video` route returns only the full embed URL. The raw ID stays server-side, so it can't be lifted from DevTools network tab by a paid user to share the video.
+- **`youtube-nocookie.com`** embed domain used — YouTube's privacy-enhanced mode; doesn't set tracking cookies unless the viewer plays the video.
+- **Canvas watermark, not a DOM overlay** — DOM elements can be removed in one DevTools click. A canvas element with a 30-second redraw cycle is meaningfully harder to suppress — removing it triggers a redraw 30 seconds later.
+- **`SessionContent` converted to client component** — required to call `useAuth()` for the user email (needed by the watermark). The component had no server-only code so the conversion was clean.
+- **`isPlaceholder` returned from API** — VideoPlayer can show the "Coming Soon" screen without knowing the raw ID; it only checks the flag.
+
+### New env vars introduced
+```
+YOUTUBE_SESSION_1_ID=placeholder_session_1   # server-only — replace with real YouTube video ID before launch
+YOUTUBE_SESSION_2_ID=placeholder_session_2
+YOUTUBE_SESSION_3_ID=placeholder_session_3
+```
+Never prefix these `NEXT_PUBLIC_` — they must stay server-only.
+
+### Verification
+- `npm test` — **110/110** passing (20 suites; +7 new video route tests; SessionContent tests updated).
+- `npm run build` — green. `/api/session/video` route appears in build output.
+- Mobile: 16:9 aspect ratio works at 375px. No fixed heights anywhere in the video stack.
+- Desktop: All existing pages and session cards unchanged at 1280px.
 
 ---
 
