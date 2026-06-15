@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE, getSession } from '@/lib/auth/session'
 import { UserMenu } from './UserMenu'
@@ -17,7 +18,14 @@ export async function Navbar() {
     <nav className="w-full border-b border-brand-border bg-brand-bg sticky top-0 z-50 relative">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded bg-brand-amberDark flex-shrink-0" aria-hidden="true" />
+          <Image
+            src="/logo.png"
+            alt="DefiLords"
+            width={32}
+            height={32}
+            priority
+            className="h-8 w-8 flex-shrink-0"
+          />
           <span className="text-brand-heading font-semibold text-lg tracking-tight">DefiLords</span>
         </Link>
 

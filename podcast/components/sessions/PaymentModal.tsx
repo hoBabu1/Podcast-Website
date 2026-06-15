@@ -79,6 +79,12 @@ export function PaymentModal({
           <p className="font-mono text-xs text-brand-body">{shortAddress}</p>
         </div>
 
+        <div className="rounded-lg border border-brand-amber/40 bg-brand-amber/10 px-3 py-2">
+          <p className="text-brand-amber text-xs font-medium">
+            Pay on Base mainnet only. Sending on any other network will not unlock the session.
+          </p>
+        </div>
+
         {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
         <div className="flex flex-col gap-2 mt-2">
