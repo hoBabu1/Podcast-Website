@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import localFont from 'next/font/local'
 import Script from 'next/script'
 import './globals.css'
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const initialAuth = await getServerAuthState()
+  const nonce = headers().get('x-nonce') ?? undefined
 
   return (
     <html lang="en">
@@ -35,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           id="contentsquare"
           src="https://t.contentsquare.net/uxa/7895fa4b6fde7.js"
           strategy="afterInteractive"
-          defer
+          nonce={nonce}
         />
         <Providers initialAuth={initialAuth}>{children}</Providers>
         <ProgressBar />
