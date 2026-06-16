@@ -40,5 +40,6 @@ export const ERC20_ABI = [
 ] as const
 
 // Backward-compatibility aliases — existing imports of USDC_ADDRESS / USDC_ABI still compile
-export const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS!
+// Base mainnet USDC
+export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 export const USDC_ABI = ERC20_ABI

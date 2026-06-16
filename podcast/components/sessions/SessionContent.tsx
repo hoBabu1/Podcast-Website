@@ -9,6 +9,62 @@ import { VideoPlayer } from './VideoPlayer'
 const GITHUB_URL = 'https://github.com/defilords'
 const AI_VAULTS_URL = 'https://defilords.com/ai-vaults'
 
+// Structured learning content shown after payment for the paid sessions.
+// Section headings render in amber, bullets in body text, sections spaced gap-6.
+const SESSION_LEARNINGS: Record<
+  number,
+  { sections: { heading: string; bullets: string[] }[]; outcome?: string }
+> = {
+  2: {
+    sections: [
+      {
+        heading: 'What you will learn:',
+        bullets: [
+          'Liquidity pools — how they work and how to profit safely',
+          'Staking strategies that compound automatically',
+          'Pendle Finance — the yield trading protocol most investors miss',
+          'Low-risk stable yield strategies for beginners',
+          'Real portfolio examples with live numbers',
+          'How DefiLords vets every protocol before recommending it',
+        ],
+      },
+    ],
+  },
+  3: {
+    sections: [
+      {
+        heading: 'Part 1 — Borrow Without Selling:',
+        bullets: [
+          'Use Aave to borrow USDC against your ETH — keep exposure, unlock liquidity',
+          'Morpho — peer-to-peer lending for better rates',
+          'Kamino — capital-efficient borrowing on Solana',
+        ],
+      },
+      {
+        heading: 'Part 2 — Stack Yield on Yield:',
+        bullets: [
+          'Deposit ETH → borrow USDC → deploy into DefiLords AI Vaults',
+          'Recursive yield generation explained simply',
+          'Health factors, liquidation avoidance, risk management',
+        ],
+      },
+      {
+        heading: 'Part 3 — DefiLords AI Alpha Hunter:',
+        bullets: [
+          'Live demo of the autonomous on-chain trading agent',
+          'AI scoring engine: Momentum (35%), Volume (20%), Trend (20%), Risk (25%)',
+          'Fear & Greed analysis, regime detection, portfolio allocation',
+          '24-token universe with real-time AI scoring',
+          'How to read the dashboard — token scoring, trade history, portfolio metrics',
+          'Future roadmap: live autonomous execution, multi-chain, vault integration',
+        ],
+      },
+    ],
+    outcome:
+      'You leave this session knowing how to deploy capital intelligently, stack yield efficiently, and let DefiLords AI do the heavy lifting.',
+  },
+}
+
 interface SessionContentProps {
   sessionId: number
 }
@@ -24,6 +80,7 @@ export function SessionContent({ sessionId }: SessionContentProps) {
   if (!session) return null
 
   const isFree = session.isFree
+  const learnings = SESSION_LEARNINGS[session.id]
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
@@ -40,6 +97,32 @@ export function SessionContent({ sessionId }: SessionContentProps) {
         {session.title}
       </h1>
       <p className="text-brand-body text-lg leading-relaxed mb-8 sm:mb-10">{session.description}</p>
+
+      {/* Structured learning content for paid sessions — shown after payment. */}
+      {learnings && (
+        <div className="flex flex-col gap-6 mb-8 sm:mb-10">
+          {learnings.sections.map((section) => (
+            <div key={section.heading} className="flex flex-col gap-3">
+              <h2 className="text-brand-amber font-medium text-base sm:text-lg">
+                {section.heading}
+              </h2>
+              <ul className="flex flex-col gap-1.5">
+                {section.bullets.map((bullet) => (
+                  <li key={bullet} className="text-brand-body text-sm">
+                    • {bullet}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          {learnings.outcome && (
+            <div className="flex flex-col gap-3">
+              <h2 className="text-brand-amber font-medium text-base sm:text-lg">Final outcome:</h2>
+              <p className="text-brand-body text-sm leading-relaxed">{learnings.outcome}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Primary action — the Twitter/X link. Opens in a new tab so the user
           doesn't lose their place on the site. */}

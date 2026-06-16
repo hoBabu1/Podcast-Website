@@ -17,6 +17,9 @@ export async function Navbar() {
   return (
     <nav className="w-full border-b border-brand-border bg-brand-bg sticky top-0 z-50 relative">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        {/* Brand logo + wordmark — links home. Logo lives in /public/logo.png
+            (transparent PNG, sized to the 32px navbar). `priority` loads it
+            eagerly since it's above the fold on every page. */}
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/logo.png"
@@ -33,7 +36,7 @@ export async function Navbar() {
         <div className="hidden sm:flex items-center gap-6">
           <Link
             href="#sessions"
-            className="text-brand-body hover:text-brand-heading text-sm transition-colors"
+            className="text-brand-body hover:text-brand-heading text-base transition-colors"
           >
             Sessions
           </Link>
@@ -41,7 +44,7 @@ export async function Navbar() {
             href="https://aivaults.defilords.finance/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand-body hover:text-brand-heading text-sm transition-colors"
+            className="text-brand-body hover:text-brand-heading text-base transition-colors"
           >
             AI Vaults
           </Link>
@@ -53,7 +56,7 @@ export async function Navbar() {
               {session.role === 'owner' && (
                 <Link
                   href="/admin"
-                  className="text-brand-amber hover:text-brand-amberDark text-sm font-semibold transition-colors"
+                  className="text-brand-amber hover:text-brand-amberDark text-base font-semibold transition-colors"
                 >
                   Dashboard
                 </Link>
@@ -63,7 +66,7 @@ export async function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="px-4 py-2 rounded bg-brand-amber text-brand-bg text-sm font-semibold hover:bg-brand-amberDark transition-colors"
+              className="px-4 py-2 rounded bg-brand-amber text-brand-bg text-base font-semibold hover:bg-brand-amberDark transition-colors"
             >
               Get started
             </Link>

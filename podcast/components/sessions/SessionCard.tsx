@@ -7,6 +7,7 @@ import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { useAuth } from '@/hooks/useAuth'
 import { useSessionAccess } from '@/hooks/useSessionAccess'
 import { PaymentModal } from './PaymentModal'
+import { CurriculumModal } from './CurriculumModal'
 import { Skeleton } from '@/components/ui/Skeleton'
 import type { Session } from '@/constants/sessions'
 
@@ -23,6 +24,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
   const { user, isLoading: authLoading } = useAuth()
   const { hasAccess } = useSessionAccess(session.id)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [curriculumOpen, setCurriculumOpen] = useState(false)
 
   const isLoggedIn = !!user
 
@@ -141,6 +143,13 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
             <h3 className="text-brand-heading font-semibold text-lg leading-snug">{session.title}</h3>
           </div>
           <p className="text-brand-body text-sm">{session.description}</p>
+          <button
+            type="button"
+            onClick={() => setCurriculumOpen(true)}
+            className="self-start text-brand-amber text-sm underline-offset-2 hover:underline cursor-pointer"
+          >
+            View Curriculum →
+          </button>
         </div>
 
         <div className="mt-auto flex flex-col gap-2">
@@ -159,6 +168,12 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
         onSuccess={() => setPaymentModalOpen(false)}
+      />
+
+      <CurriculumModal
+        sessionId={sessionId}
+        isOpen={curriculumOpen}
+        onClose={() => setCurriculumOpen(false)}
       />
     </>
   )

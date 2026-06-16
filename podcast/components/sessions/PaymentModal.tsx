@@ -79,6 +79,11 @@ export function PaymentModal({
           <p className="font-mono text-xs text-brand-body">{shortAddress}</p>
         </div>
 
+        {/*
+          Network warning: payments are only verified on-chain on Base mainnet
+          (see /api/payment/verify). Funds sent on any other network won't be
+          detected and the session stays locked — make that explicit up front.
+        */}
         <div className="rounded-lg border border-brand-amber/40 bg-brand-amber/10 px-3 py-2">
           <p className="text-brand-amber text-xs font-medium">
             Pay on Base mainnet only. Sending on any other network will not unlock the session.

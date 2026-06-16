@@ -1,5 +1,5 @@
 import { createPublicClient, http, decodeEventLog, type Hex } from 'viem'
-import { baseSepolia } from 'viem/chains'
+import { base } from 'viem/chains'
 
 const SESSION_PRICE: Record<2 | 3, number> = { 2: 50, 3: 100 }
 
@@ -22,7 +22,7 @@ export async function verifyERC20Payment(
   decimals: number = 18
 ): Promise<{ valid: boolean; reason?: string }> {
   const client = createPublicClient({
-    chain: baseSepolia,
+    chain: base,
     transport: http(process.env.ALCHEMY_RPC_URL),
   })
 

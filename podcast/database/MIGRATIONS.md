@@ -8,6 +8,25 @@ Rules:
 
 ---
 
+## M005 — 2026-06-16 — chain_id default to Base mainnet
+
+**Status:** ✅ applied 2026-06-16
+
+```sql
+-- ============================================================
+-- M005 — update chain_id default to Base mainnet
+-- DefiLords Podcast — 2026-06-16
+-- Paste into Supabase SQL Editor and run in one click.
+-- ============================================================
+
+alter table public.session_access
+  alter column chain_id set default 8453;
+
+-- ============================================================
+```
+
+---
+
 ## M001 — 2026-06-06 — initial schema
 
 **Status:** ✅ applied 2026-06-06

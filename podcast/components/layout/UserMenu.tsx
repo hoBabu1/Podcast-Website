@@ -55,7 +55,7 @@ export function UserMenu({ name, email }: UserMenuProps) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="text-brand-body hover:text-brand-heading text-sm font-medium transition-colors max-w-[10rem] truncate"
+        className="text-brand-body hover:text-brand-heading text-base font-medium transition-colors max-w-[10rem] truncate"
       >
         {label}
       </button>
