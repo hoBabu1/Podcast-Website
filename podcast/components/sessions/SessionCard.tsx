@@ -40,24 +40,39 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
 
   if (session.isFree) {
     return (
-      <div className="rounded-xl border border-brand-greenBorder bg-[#0e1812] p-6 flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-brand-muted text-xs font-mono">Session {index + 1}</span>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-greenDeep border border-brand-greenBorder text-brand-green">
-            Free
-          </span>
+      <>
+        <div className="rounded-xl border border-brand-greenBorder bg-[#0e1812] p-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-brand-muted text-xs font-mono">Session {index + 1}</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-greenDeep border border-brand-greenBorder text-brand-green">
+              Free
+            </span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-brand-heading font-semibold text-lg leading-snug">{session.title}</h3>
+            <p className="text-brand-body text-sm">{session.description}</p>
+            <button
+              type="button"
+              onClick={() => setCurriculumOpen(true)}
+              className="self-start text-brand-green text-sm underline-offset-2 hover:underline cursor-pointer"
+            >
+              View Curriculum →
+            </button>
+          </div>
+          <Link
+            href={`/sessions/${session.id}`}
+            className="mt-auto inline-flex items-center gap-1 text-brand-green font-semibold text-sm hover:opacity-80 transition-opacity"
+          >
+            Watch now →
+          </Link>
         </div>
-        <div className="flex flex-col gap-2">
-          <h3 className="text-brand-heading font-semibold text-lg leading-snug">{session.title}</h3>
-          <p className="text-brand-body text-sm">{session.description}</p>
-        </div>
-        <Link
-          href={`/sessions/${session.id}`}
-          className="mt-auto inline-flex items-center gap-1 text-brand-green font-semibold text-sm hover:opacity-80 transition-opacity"
-        >
-          Watch now →
-        </Link>
-      </div>
+
+        <CurriculumModal
+          sessionId={session.id as 1 | 2 | 3}
+          isOpen={curriculumOpen}
+          onClose={() => setCurriculumOpen(false)}
+        />
+      </>
     )
   }
 

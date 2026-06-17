@@ -10,21 +10,33 @@ import { SESSIONS } from '@/constants/sessions'
 import { PaymentModal } from './PaymentModal'
 import { Skeleton } from '@/components/ui/Skeleton'
 
+// Shared across every session — the core DefiLords recursive yield strategy.
+// Reused below so the same block stays in sync everywhere it appears.
+const RECURSIVE_YIELD_SECTION = {
+  heading: 'The DefiLords Recursive Yield Strategy:',
+  bullets: [
+    'Deposit ETH → borrow USDC → deploy into DefiLords AI Vaults',
+    'Recursive yield generation explained simply',
+    'Health factors, liquidation avoidance, risk management',
+  ],
+}
+
 // Full curriculum shown inside the modal, keyed by session id. Content only —
 // section headings render in amber, bullets in body text.
-const CURRICULUM: Record<2 | 3, { heading: string; bullets: string[] }[]> = {
+const CURRICULUM: Record<1 | 2 | 3, { heading: string; bullets: string[] }[]> = {
+  1: [RECURSIVE_YIELD_SECTION],
   2: [
     {
       heading: 'What you will learn:',
       bullets: [
         'How to earn yield on stablecoins safely',
         'Liquidity pools — how they work and how to profit',
-        'Pendle Finance — the yield trading secret most miss',
         'Staking strategies that compound automatically',
         'Real portfolio examples with live numbers',
         'How DefiLords vets every protocol before recommending it',
       ],
     },
+    RECURSIVE_YIELD_SECTION,
   ],
   3: [
     {
@@ -35,16 +47,9 @@ const CURRICULUM: Record<2 | 3, { heading: string; bullets: string[] }[]> = {
         'Kamino — capital-efficient borrowing on Solana',
       ],
     },
+    RECURSIVE_YIELD_SECTION,
     {
-      heading: 'Part 2 — Stack Yield on Yield:',
-      bullets: [
-        'Deposit ETH → borrow USDC → deploy into DefiLords AI Vaults',
-        'Recursive yield generation explained simply',
-        'Health factors, liquidation avoidance, risk management',
-      ],
-    },
-    {
-      heading: 'Part 3 — DefiLords AI Alpha Hunter:',
+      heading: 'Part 2 — DefiLords AI Alpha Hunter:',
       bullets: [
         'Live demo of autonomous on-chain trading agent',
         'AI scoring: Momentum (35%), Volume (20%), Trend (20%), Risk (25%)',
@@ -58,7 +63,7 @@ const CURRICULUM: Record<2 | 3, { heading: string; bullets: string[] }[]> = {
 }
 
 interface CurriculumModalProps {
-  sessionId: 2 | 3
+  sessionId: 1 | 2 | 3
   isOpen: boolean
   onClose: () => void
 }
@@ -89,6 +94,17 @@ export function CurriculumModal({ sessionId, isOpen, onClose }: CurriculumModalP
   // Bottom CTA — mirrors the card's pay logic so we reuse the existing payment
   // flow rather than rewriting it.
   function renderUnlock() {
+    if (session?.isFree) {
+      return (
+        <Link
+          href={`/sessions/${sessionId}`}
+          className="flex w-full min-h-[48px] items-center justify-center rounded-lg text-sm font-semibold text-center bg-brand-green text-brand-bg hover:opacity-90 transition-opacity"
+        >
+          Watch now →
+        </Link>
+      )
+    }
+
     if (authLoading) {
       return <Skeleton className="h-12 w-full" />
     }
@@ -179,16 +195,18 @@ export function CurriculumModal({ sessionId, isOpen, onClose }: CurriculumModalP
         </div>
       </div>
 
-      <PaymentModal
-        sessionId={sessionId}
-        sessionPrice={session.price}
-        isOpen={paymentModalOpen}
-        onClose={() => setPaymentModalOpen(false)}
-        onSuccess={() => {
-          setPaymentModalOpen(false)
-          onClose()
-        }}
-      />
+      {sessionId !== 1 && (
+        <PaymentModal
+          sessionId={sessionId as 2 | 3}
+          sessionPrice={session.price}
+          isOpen={paymentModalOpen}
+          onClose={() => setPaymentModalOpen(false)}
+          onSuccess={() => {
+            setPaymentModalOpen(false)
+            onClose()
+          }}
+        />
+      )}
     </>
   )
 }
