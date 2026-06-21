@@ -100,7 +100,7 @@ export function CurriculumModal({ sessionId, isOpen, onClose }: CurriculumModalP
           href={`/sessions/${sessionId}`}
           className="flex w-full min-h-[48px] items-center justify-center rounded-lg text-sm font-semibold text-center bg-brand-green text-brand-bg hover:opacity-90 transition-opacity"
         >
-          Watch now →
+          Get Access →
         </Link>
       )
     }
