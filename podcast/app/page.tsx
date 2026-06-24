@@ -33,13 +33,13 @@ export default function HomePage({
             Learn DeFi. <span className="text-brand-amber">Earn Yield.</span> Build Wealth On-Chain.
           </h1>
           <p className="text-brand-body text-base sm:text-lg max-w-xl mx-auto mb-10 break-words text-balance">
-            Three sessions. From complete beginner to confident DeFi investor. Start free in 30 minutes.
+            Three live sessions. From complete beginner to confident DeFi investor. Register free — we'll send you the link before each session.
           </p>
           <Link
             href="#sessions"
             className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-6 py-3 min-h-[48px] rounded-lg bg-brand-amber text-brand-bg font-semibold text-base hover:bg-brand-amberDark transition-colors"
           >
-            Start Free: Learn DeFi in 30 Minutes
+            Register Free — Get the Session Link
           </Link>
         </section>
 

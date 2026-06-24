@@ -63,7 +63,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
             href={`/sessions/${session.id}`}
             className="mt-auto inline-flex items-center gap-1 text-brand-green font-semibold text-sm hover:opacity-80 transition-opacity"
           >
-            Get Access →
+            Register Free →
           </Link>
         </div>
 

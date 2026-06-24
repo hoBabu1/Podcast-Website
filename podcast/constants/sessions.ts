@@ -4,7 +4,7 @@ export const SESSIONS = [
     title: 'DeFi Foundations — Free',
     price: 0,
     isFree: true,
-    description: 'Blockchain basics, wallets, and how DeFi actually works. No experience needed. Start in 30 minutes.',
+    description: 'Blockchain basics, wallets, and how DeFi actually works. No experience needed. We\'ll send you the live session link before the day.',
     twitterUrl: 'https://x.com/defilordsss',
     priceUSDC: null,
   },
