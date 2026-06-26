@@ -18,8 +18,8 @@ function buildCsp(nonce: string): string {
     "font-src 'self'",
     // wagmi/RainbowKit/WalletConnect need to reach RPC + relay endpoints
     "connect-src 'self' https: wss:",
-    // WalletConnect's verify iframe + RainbowKit modal assets
-    "frame-src 'self' https://verify.walletconnect.com https://verify.walletconnect.org",
+    // WalletConnect's verify iframe + RainbowKit modal assets + YouTube embeds
+    "frame-src 'self' https://verify.walletconnect.com https://verify.walletconnect.org https://www.youtube-nocookie.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
