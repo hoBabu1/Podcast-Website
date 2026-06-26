@@ -6,8 +6,8 @@ process.env.NEXT_PUBLIC_USDT_DECIMALS = '18'
 import { USDC_ADDRESS, USDC_ABI, SUPPORTED_TOKENS, ERC20_ABI } from './contracts'
 
 describe('backward-compat aliases', () => {
-  it('USDC_ADDRESS reads from NEXT_PUBLIC_USDC_ADDRESS', () => {
-    expect(USDC_ADDRESS).toBe('0xf7464321dE37BdE4C03AAeeF6b1e7b71379A9a64')
+  it('USDC_ADDRESS is the Base mainnet USDC contract address', () => {
+    expect(USDC_ADDRESS).toBe('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
   })
 
   it('USDC_ABI includes the transfer function', () => {

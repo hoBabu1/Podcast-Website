@@ -31,6 +31,20 @@ export function NameStep({ email }: Props) {
         return
       }
 
+      if (typeof window !== 'undefined') {
+        const w = window as Window & { twq?: (...args: unknown[]) => void }
+        if (typeof w.twq === 'function') {
+          w.twq('event', 'tw-rbp50-rd89l', {
+            value: null,
+            currency: null,
+            contents: [{ content_type: null, content_id: null, content_name: null, content_price: null, num_items: null, content_group_id: null }],
+            status: null,
+            conversion_id: null,
+            email_address: null,
+          })
+        }
+      }
+
       router.push('/')
       router.refresh()
     } catch {

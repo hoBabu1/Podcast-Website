@@ -7,6 +7,7 @@ import { WalletButton } from './WalletButton'
 
 jest.mock('wagmi', () => ({
   useAccount: jest.fn(),
+  useAccountEffect: jest.fn(),
   useDisconnect: jest.fn(() => ({ disconnect: jest.fn() })),
 }))
 

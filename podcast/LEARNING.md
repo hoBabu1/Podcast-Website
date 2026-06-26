@@ -1541,3 +1541,203 @@ If you point the app at the testnet address while running on mainnet, transfers 
 **The database default (M005).** Each unlocked session is recorded in `session_access` with the `chain_id` it was paid on. The column defaulted to `8453` already, but to keep the migration history honest and explicit we added **M005** to (re)assert that default now that mainnet is the real network. Migrations are append-only — we never edit an applied one — so even a "confirm the default" change gets its own numbered entry. Because this is a schema change it has to be run in Supabase by hand; code shipping to mainnet doesn't automatically alter the database.
 
 **The build-time gotcha.** Any env var starting with `NEXT_PUBLIC_` is baked into the JavaScript bundle *when you build*, not read fresh when the page loads. So after changing `NEXT_PUBLIC_CHAIN_ID` or the addresses, the running app keeps the old values until you rebuild/restart. Server-only vars (no prefix), like `ALCHEMY_RPC_URL`, are read at runtime. Forgetting this is the classic way to get a half-switched app where the server is on mainnet but the client is still quietly on testnet.
+
+---
+
+## X (Twitter) Ads — Base Pixel
+
+### What was built
+
+We added the X Ads base pixel to the site. It loads on every single page automatically, in the background, without slowing down anything the user sees. No conversion events yet — this is just the foundation.
+
+---
+
+### What the base pixel actually does
+
+When a visitor lands on the site, the pixel script runs silently. It does one thing: tells X's ad network "someone just visited this page." X uses that signal to:
+
+- **Build an audience** — X can now identify which of your ad viewers actually visited the site (by matching their X account to their browser fingerprint).
+- **Measure reach** — you can see in the X Ads dashboard how many unique people hit the site from your ads.
+- **Power retargeting** — later, you can create a "Website Visitors" audience in X Ads and target those people specifically with follow-up ads.
+
+That's it for the base pixel. It doesn't know *what* you looked at or *whether you paid*. That's what conversion events add — but those come later.
+
+---
+
+### What conversion events are (and why we're not adding them yet)
+
+A conversion event is an additional signal you send when something meaningful happens — for example:
+
+- User reached the checkout page → `twq('event', 'ViewContent', ...)`
+- User completed a purchase → `twq('event', 'Purchase', { value: 50, currency: 'USD' })`
+
+These let X optimise your ads automatically: instead of showing your ads to everyone, X's algorithm learns to target people who look like the ones who actually paid.
+
+We're not adding these yet because they need to fire at the right moments in the user flow, tied to real payment confirmation. The base pixel first — get the audience data collecting — then layer in conversion events once the flow is confirmed working.
+
+---
+
+### Why `next/script` instead of a plain `<script>` tag
+
+Dropping a raw `<script>` tag directly into the layout would cause two problems:
+
+**1. Content Security Policy (CSP) would block it.**
+This app has a strict CSP that requires every inline script to carry a nonce — a one-time random token generated per request. Without the nonce, the browser sees the script as potentially malicious (XSS attack) and silently refuses to run it. The `<Script>` component from `next/script` automatically receives the nonce that the app already generates in `middleware.ts`, so it passes the CSP check.
+
+**2. It would block the page render.**
+A raw `<script>` in the HTML `<head>` (or `<body>`) pauses the browser's HTML parser until the script finishes downloading and running. If X's server is slow for even half a second, the whole page hangs. `strategy="afterInteractive"` tells Next.js to wait until the page is fully loaded and interactive before injecting the script. The user never waits for an ad pixel to see your content.
+
+---
+
+### How the pixel actually loads (step by step)
+
+1. User visits any page on the site.
+2. Next.js renders the layout server-side, embedding a `<script>` tag with the init code and a nonce.
+3. The browser receives the page, renders it, lets React hydrate — the page is now interactive.
+4. *After* all that: the browser runs the pixel init code. This code creates a new `<script>` element and injects it into the DOM, pointing to `https://static.ads-twitter.com/uwt.js`.
+5. `uwt.js` loads and runs. It sends a ping to X's servers saying "pixel `rbp50` fired on this browser."
+6. Done. The user sees nothing. No popup, no spinner, no effect on the page.
+
+The CSP is fine with step 4 (the dynamic injection) because of `'strict-dynamic'`: once a script is trusted via nonce, it's allowed to dynamically create and insert new scripts. So `uwt.js` is trusted without needing to add `static.ads-twitter.com` to the CSP allowlist.
+
+---
+
+### How to verify the pixel is actually firing
+
+**Method 1 — Browser Network tab (most reliable):**
+
+1. Open your site in Chrome/Firefox.
+2. Open DevTools → Network tab.
+3. In the filter box, type `ads-twitter` or `uwt.js`.
+4. Refresh the page.
+5. You should see two requests:
+   - `uwt.js` loading from `static.ads-twitter.com` (the pixel library)
+   - A request to `analytics.twitter.com` or similar (the actual tracking ping)
+
+If both appear with status 200, the pixel is firing correctly.
+
+**Method 2 — X Pixel Helper Chrome extension:**
+
+1. Install the [X Pixel Helper](https://chromewebstore.google.com/detail/twitter-pixel-helper/jepminnlebllinfmkhfbkpckogoiefpd) extension from the Chrome Web Store.
+2. Visit your site.
+3. Click the extension icon in your browser toolbar.
+4. It will show "Pixel `rbp50` detected — Page View fired."
+
+**Method 3 — X Ads dashboard:**
+
+After a few hours of real traffic, go to X Ads → Events Manager → your pixel. You'll see a chart of "Page View" events. If the number matches your traffic, it's working.
+
+---
+
+## X (Twitter) Ads — Conversion Events (Connected Wallet & Sign Up)
+
+### What was built
+
+Two specific conversion events now fire at the right moments in the user flow:
+
+- **`tw-rbp50-rd89j` (Connected Wallet)** — fires when a user clicks through RainbowKit's wallet modal and successfully connects a wallet for the first time in a session.
+- **`tw-rbp50-rd89l` (Sign Up)** — fires when a brand new user completes account creation (name entered, API confirms success, user record written to Supabase).
+
+Nothing about the wallet or signup flows was changed — these are pure side effects that fire after an existing success point and then get out of the way.
+
+---
+
+### What each event tells X's ad system
+
+**Connected Wallet** — this is a high-intent signal. Someone clicked an ad, landed on the site, AND connected their crypto wallet. X's algorithm treats this as a strong indicator that the person is a real potential buyer. Over time, X uses these signals to find more people who *look like* wallet connectors (similar interests, behaviour, device type) and shows your ads to them first. This is called **lookalike targeting**.
+
+**Sign Up** — this is the deepest conversion you can track without a payment step. It tells X: this ad led to an account creation. Combined with the wallet event, you can see which ads produce users who sign up vs users who just bounce.
+
+Neither event sends sensitive data right now — all the fields (`value`, `currency`, `email_address`, etc.) are `null`. That's intentional: the events confirm the action happened, but no personal or financial data travels to X yet. That changes in a future step when you decide to pass enriched data.
+
+---
+
+### Why we check `window.twq` before calling it
+
+The base pixel script (`uwt.js`) loads asynchronously — it waits until the page is fully interactive before it starts downloading. This is good for page speed, but it means there's a window of time (usually under a second, but could be longer on a slow connection or with an ad-blocker) where `window.twq` doesn't exist yet.
+
+If you called `window.twq(...)` without checking, you'd get a JavaScript crash: `TypeError: window.twq is not a function`. That crash would bubble up and potentially break other things on the page — including the wallet connection UI or the signup redirect.
+
+The guard is two checks in one:
+
+```ts
+if (typeof window !== 'undefined') {       // are we in the browser at all?
+  const w = window as ...
+  if (typeof w.twq === 'function') {       // has the pixel script loaded?
+    w.twq('event', ...)
+  }
+}
+```
+
+The first check (`typeof window !== 'undefined'`) protects against server-side rendering. Next.js renders components on the server before sending them to the browser, and `window` doesn't exist on the server. Calling anything on `window` server-side throws an error.
+
+The second check (`typeof w.twq === 'function'`) handles the case where the pixel script was blocked by an ad-blocker, or simply hasn't loaded yet. If `twq` isn't there, we skip the call silently. **The user flow still completes normally** — the redirect still happens, the wallet still connects. We just miss the tracking signal for that one user. This is the correct behaviour: ad tracking should never break the actual product.
+
+---
+
+### The `isReconnected` flag — why it matters for the wallet event
+
+Crypto wallets remember their connection. If you connected MetaMask yesterday, wagmi restores that connection automatically the next time you visit the site — no modal, no user action. Without a guard, the Connected Wallet event would fire on *every page load* for every user whose wallet is already connected, not just when they actually click Connect.
+
+wagmi v2's `useAccountEffect` hook provides an `onConnect` callback with a field called `isReconnected`:
+
+- `isReconnected: false` → the user just clicked through the Connect modal
+- `isReconnected: true` → the connection was restored silently from storage on page load
+
+The event only fires when `isReconnected` is `false`. This means the signal X receives genuinely counts "user connected their wallet" as a deliberate action, not a passive page load. Your conversion numbers in X Ads will reflect real intent, not background reconnects.
+
+---
+
+### How to verify each event fires at the right moment
+
+**Connected Wallet — using the Network tab:**
+
+1. Open DevTools → Network tab, filter by `analytics.twitter.com`.
+2. Click "Connect Wallet" and go through the modal.
+3. You should see a new network request appear the moment the connection succeeds. In the request payload, look for `tw-rbp50-rd89j`.
+4. Reload the page (wallet stays connected) — the request should NOT fire again on reload.
+
+**Connected Wallet — using X Pixel Helper:**
+
+1. Click the Pixel Helper extension after connecting your wallet.
+2. It should list a new event: event ID `tw-rbp50-rd89j`, labelled with whatever name you gave it in your X Ads Events Manager.
+
+**Sign Up — using the Network tab:**
+
+1. Go through the full sign-up flow as a new user (email → OTP → name).
+2. In the Network tab, filter by `analytics.twitter.com`.
+3. The `tw-rbp50-rd89l` request should appear after you click "Continue" on the name step and before the page redirects to the homepage.
+4. If you sign in as an *existing* user (email → OTP → directly to homepage), no Sign Up event should fire — because that path goes through `OtpStep` only, which has no tracking call.
+
+**Both events — X Ads dashboard:**
+
+After a few hours of real signups and wallet connections, go to X Ads → Events Manager → your pixel → the specific event. You'll see a chart of firings. The count should roughly match your actual signups and wallet connections from that period.
+
+---
+
+### Event 1 — Page View (`tw-rbp50-rd89g`) and the double-counting risk
+
+The Page View event fires from the same inline `<Script>` block as the base pixel config call, immediately after it:
+
+```js
+twq('config', 'rbp50');
+if (typeof window.twq === 'function') {
+  window.twq('event', 'tw-rbp50-rd89g', { value: null, ... });
+}
+```
+
+**Why the guard is always true here (but still kept):**
+The IIFE at the top of that script block sets up `window.twq` as a queue function before either of these lines runs — so by the time we reach the guard, `window.twq` is already a function. The check will never be false in this position. It's kept purely for visual consistency with the other two events (Connected Wallet and Sign Up), where the guard is genuinely needed because those fire later, after the page has loaded and there is a real chance `uwt.js` was blocked.
+
+**The double-counting risk:**
+When you call `twq('config', 'rbp50')`, X's pixel library may itself log a generic "Page View" signal as part of initialisation — this is standard X pixel behaviour. If that's the case, a single page load produces two page view signals: one from the config call and one from the explicit `twq('event', 'tw-rbp50-rd89g', ...)` call. In X Ads Events Manager, this would show the Page View event count at roughly 2× the real number of page loads.
+
+**Why this risk is accepted for now:**
+The alternative — not having the named `tw-rbp50-rd89g` event at all — means any conversion rules or audiences in X Ads that target that specific event ID would never receive data. The explicit event call is the correct way to tie a named event to a specific event ID you created in Events Manager. If it turns out the config call already covers page views, the fix is a one-line deletion of the event call; no structural change is needed.
+
+**How to check after launch:**
+1. Go to X Ads → Events Manager → your pixel.
+2. Look at the "Page View" event (`tw-rbp50-rd89g`) count over a period you know the traffic for.
+3. Compare to actual page view count from another source (e.g. Hotjar, Cloudflare analytics, or your server logs).
+4. If the X count is roughly 2× real traffic → double-counting confirmed → delete the `window.twq('event', 'tw-rbp50-rd89g', ...)` line from `app/layout.tsx` and let the config call handle page views on its own.
+5. If the X count matches real traffic → no double-counting → keep both calls.

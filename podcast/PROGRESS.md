@@ -4,6 +4,56 @@
 
 ---
 
+## X (Twitter) Ads — all 3 conversion events (Page View, Connected Wallet, Sign Up) — 2026-06-26
+
+### What was completed
+- **`app/layout.tsx`** — Added `twq('event', 'tw-rbp50-rd89g', ...)` (Page View) in the same `<Script>` block as the base pixel config call, immediately after it. Fires on every page load. Guarded with `typeof window.twq === 'function'` — which is always true here since the IIFE defines `window.twq` as the queue function before this line runs, but kept for pattern consistency.
+- **`components/wallet/WalletButton.tsx`** — Added `useAccountEffect` (wagmi v2) with an `onConnect` callback. Fires `tw-rbp50-rd89j` (Connected Wallet) only when `data.isReconnected` is `false` — meaning the user actively connected, not a page-load auto-restore. Import updated from `useDisconnect` to `useAccountEffect, useDisconnect`.
+- **`components/auth/NameStep.tsx`** — Added `twq('event', 'tw-rbp50-rd89l', ...)` (Sign Up) immediately after `/api/auth/complete-signup` returns `{ success: true }` and before `router.push('/')`. Fires only on genuine new-user account creation.
+- All three calls use `typeof window.twq === 'function'` guards for consistency.
+
+### Files changed
+- `podcast/app/layout.tsx`
+- `podcast/components/wallet/WalletButton.tsx`
+- `podcast/components/auth/NameStep.tsx`
+
+### Decisions made
+- `useAccountEffect` with `data.isReconnected` check is the correct wagmi v2 mechanism for "user just connected" vs "wallet restored on page load" — avoids firing the event on every page refresh for already-connected users.
+- Signup event fires client-side in `NameStep` (not in the API route) because it needs `window.twq`, which only exists in the browser; API routes run server-side.
+- **Page View double-counting risk acknowledged and accepted:** the `twq('config', ...)` call may itself log a generic page view signal in X Ads depending on pixel configuration. Adding `twq('event', 'tw-rbp50-rd89g', ...)` means a single page load could produce two page view signals — one from the config initialisation and one from this named event. Owner will verify in X Ads Events Manager after live traffic and remove the explicit event call if double-counting is confirmed.
+
+### What next
+Check X Ads Events Manager after live traffic to confirm whether `tw-rbp50-rd89g` is double-counting alongside the config-level page view signal.
+
+---
+
+## X (Twitter) Ads base pixel — 2026-06-26
+
+### What was completed
+- **`podcast/.env.local`** — Added `NEXT_PUBLIC_X_PIXEL_ID=rbp50`.
+- **`podcast/lib/env.ts`** — Added `NEXT_PUBLIC_X_PIXEL_ID: z.string().optional()` to `clientEnvSchema`, matching the Hotjar pattern.
+- **`podcast/app/layout.tsx`** — Added `<Script id="x-pixel" strategy="afterInteractive" nonce={nonce}>` with the X Ads base pixel init code as inline children. Pixel ID is read from `process.env.NEXT_PUBLIC_X_PIXEL_ID` at render time. No hardcoding.
+
+### Files changed
+- `podcast/.env.local`
+- `podcast/lib/env.ts`
+- `podcast/app/layout.tsx`
+
+### Decisions made
+- No CSP changes required: existing `'strict-dynamic'` covers `uwt.js` (dynamically inserted by the nonced init script); `connect-src https:` wildcard covers analytics calls; `img-src https:` covers any pixel images.
+- Pixel ID stored as `NEXT_PUBLIC_X_PIXEL_ID` — public prefix is correct since the pixel ID is embedded in client-side code by design.
+- `lib/env.ts` treats the var as optional (`.optional()`) so the app doesn't crash in environments where the pixel isn't configured, matching the Hotjar precedent.
+- No conversion events (`twq('event', ...)`) added — base pixel only.
+- No server-side Conversion API — out of scope.
+
+### New env vars
+- `NEXT_PUBLIC_X_PIXEL_ID=rbp50` — also add this in Vercel's environment variables panel before deploying.
+
+### What next
+Verify the pixel fires in the browser (see LEARNING.md), then add conversion events when ready.
+
+---
+
 ## USDT as second payment option (multi-token)
 
 **Status:** Complete · M004 applied. No auth, session-access, or video player code touched. `npm test` **126/126** passing. `npm run build` green.

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, useDisconnect } from 'wagmi'
+import { useAccount, useAccountEffect, useDisconnect } from 'wagmi'
 
 export function WalletButton() {
   const { address, isConnected } = useAccount()
@@ -10,6 +10,23 @@ export function WalletButton() {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  useAccountEffect({
+    onConnect(data) {
+      if (data.isReconnected) return
+      if (typeof window === 'undefined') return
+      const w = window as Window & { twq?: (...args: unknown[]) => void }
+      if (typeof w.twq !== 'function') return
+      w.twq('event', 'tw-rbp50-rd89j', {
+        value: null,
+        currency: null,
+        contents: [{ content_type: null, content_id: null, content_name: null, content_price: null, num_items: null, content_group_id: null }],
+        status: null,
+        conversion_id: null,
+        email_address: null,
+      })
+    },
+  })
 
   // Close the popover when clicking outside it or pressing Escape.
   useEffect(() => {

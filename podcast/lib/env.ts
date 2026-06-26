@@ -19,6 +19,7 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_USDC_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Must be a valid Ethereum address'),
   NEXT_PUBLIC_CHAIN_ID: z.string().min(1),
   NEXT_PUBLIC_HOTJAR_ID: z.string().optional(),
+  NEXT_PUBLIC_X_PIXEL_ID: z.string().optional(),
 })
 
 export function validateEnv(rawEnv: NodeJS.ProcessEnv = process.env) {
