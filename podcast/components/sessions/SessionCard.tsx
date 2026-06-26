@@ -51,6 +51,9 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
           <div className="flex flex-col gap-2">
             <h3 className="text-brand-heading font-semibold text-lg leading-snug">{session.title}</h3>
             <p className="text-brand-body text-sm">{session.description}</p>
+            <p className="text-brand-amber text-xs mt-1">
+              📅 A link to the live session will be shared via email before the scheduled day.
+            </p>
             <button
               type="button"
               onClick={() => setCurriculumOpen(true)}

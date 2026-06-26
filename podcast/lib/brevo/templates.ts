@@ -49,6 +49,7 @@ export const WELCOME_EMAIL_BODY = (name: string) => `<table width="100%" cellpad
               <li>Health factors, liquidation avoidance, risk management</li>
             </ul>
             <p style="font-size:12px; color:#555555; margin:12px 0 0;">No wallet, payment, or previous experience required.</p>
+            <p style="font-size:12px; color:#EF9F27; margin:10px 0 0;">📅 A link to the live session will be shared via email before the scheduled day.</p>
           </td>
         </tr>
 
