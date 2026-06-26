@@ -41,13 +41,12 @@ export const WELCOME_EMAIL_BODY = (name: string) => `<table width="100%" cellpad
               </tr>
             </table>
             <p style="font-size:16px; font-weight:600; color:#F0E6C8; margin:12px 0 8px;">DeFi Foundations</p>
-            <p style="font-size:13px; color:#a89878; line-height:1.6; margin:0 0 12px;">Start in just 30 minutes and learn:</p>
+            <p style="font-size:13px; color:#a89878; line-height:1.6; margin:0 0 12px;">The foundation of everything — before any wallet, payment, or strategy:</p>
+            <p style="font-size:13px; color:#EF9F27; font-weight:500; margin:0 0 6px;">The DefiLords Recursive Yield Strategy:</p>
             <ul style="font-size:13px; color:#a89878; line-height:1.7; margin:0; padding-left:18px;">
-              <li>What blockchain and DeFi really are</li>
-              <li>How wallets and smart contracts work</li>
-              <li>The 5 most popular strategies used to generate passive income in DeFi</li>
-              <li>The benefits and risks of each strategy</li>
-              <li>How to avoid common beginner mistakes</li>
+              <li>Deposit ETH → borrow USDC → deploy into DefiLords AI Vaults</li>
+              <li>Recursive yield generation explained simply</li>
+              <li>Health factors, liquidation avoidance, risk management</li>
             </ul>
             <p style="font-size:12px; color:#555555; margin:12px 0 0;">No wallet, payment, or previous experience required.</p>
           </td>
@@ -67,15 +66,19 @@ export const WELCOME_EMAIL_BODY = (name: string) => `<table width="100%" cellpad
               </tr>
             </table>
             <p style="font-size:16px; font-weight:600; color:#F0E6C8; margin:12px 0 8px;">How to Earn Yield Safely in DeFi</p>
-            <p style="font-size:13px; color:#a89878; line-height:1.6; margin:0 0 12px;">Move beyond the basics and learn how experienced investors generate yield using real DeFi protocols:</p>
+            <p style="font-size:13px; color:#EF9F27; font-weight:500; margin:0 0 6px;">What you will learn:</p>
+            <ul style="font-size:13px; color:#a89878; line-height:1.7; margin:0 0 12px; padding-left:18px;">
+              <li>How to earn yield on stablecoins safely</li>
+              <li>Liquidity pools — how they work and how to profit</li>
+              <li>Staking strategies that compound automatically</li>
+              <li>Real portfolio examples with live numbers</li>
+              <li>How DefiLords vets every protocol before recommending it</li>
+            </ul>
+            <p style="font-size:13px; color:#EF9F27; font-weight:500; margin:0 0 6px;">The DefiLords Recursive Yield Strategy:</p>
             <ul style="font-size:13px; color:#a89878; line-height:1.7; margin:0; padding-left:18px;">
-              <li>DefiLords AI Vaults</li>
-              <li>Pendle Finance</li>
-              <li>Kamino Finance</li>
-              <li>Stablecoin lending</li>
-              <li>Liquidity pools</li>
-              <li>Automated staking strategies</li>
-              <li>Real portfolio examples and how DefiLords evaluates protocols before recommending them</li>
+              <li>Deposit ETH → borrow USDC → deploy into DefiLords AI Vaults</li>
+              <li>Recursive yield generation explained simply</li>
+              <li>Health factors, liquidation avoidance, risk management</li>
             </ul>
           </td>
         </tr>
@@ -94,12 +97,26 @@ export const WELCOME_EMAIL_BODY = (name: string) => `<table width="100%" cellpad
               </tr>
             </table>
             <p style="font-size:16px; font-weight:600; color:#F0E6C8; margin:12px 0 8px;">Advanced Yield Strategies &amp; AI Vaults</p>
-            <p style="font-size:13px; color:#a89878; line-height:1.6; margin:0 0 12px;">Take your knowledge to a professional level:</p>
+            <p style="font-size:13px; color:#EF9F27; font-weight:500; margin:0 0 6px;">Part 1 — Borrow Without Selling:</p>
+            <ul style="font-size:13px; color:#a89878; line-height:1.7; margin:0 0 12px; padding-left:18px;">
+              <li>Use Aave to borrow USDC against your ETH</li>
+              <li>Morpho — peer-to-peer lending for better rates</li>
+              <li>Kamino — capital-efficient borrowing on Solana</li>
+            </ul>
+            <p style="font-size:13px; color:#EF9F27; font-weight:500; margin:0 0 6px;">The DefiLords Recursive Yield Strategy:</p>
+            <ul style="font-size:13px; color:#a89878; line-height:1.7; margin:0 0 12px; padding-left:18px;">
+              <li>Deposit ETH → borrow USDC → deploy into DefiLords AI Vaults</li>
+              <li>Recursive yield generation explained simply</li>
+              <li>Health factors, liquidation avoidance, risk management</li>
+            </ul>
+            <p style="font-size:13px; color:#EF9F27; font-weight:500; margin:0 0 6px;">Part 2 — DefiLords AI Alpha Hunter:</p>
             <ul style="font-size:13px; color:#a89878; line-height:1.7; margin:0; padding-left:18px;">
-              <li>Borrowing against your crypto using Aave, Morpho, and Kamino</li>
-              <li>The DefiLords Recursive Yield Strategy</li>
-              <li>Risk management, health factors, and liquidation avoidance</li>
-              <li>An exclusive behind-the-scenes look at the DefiLords AI Alpha Hunter — our autonomous on-chain trading agent</li>
+              <li>Live demo of autonomous on-chain trading agent</li>
+              <li>AI scoring: Momentum (35%), Volume (20%), Trend (20%), Risk (25%)</li>
+              <li>Fear &amp; Greed analysis, regime detection, portfolio allocation</li>
+              <li>24-token universe with real-time AI scoring</li>
+              <li>How to read the dashboard — token scoring, trade history, metrics</li>
+              <li>Future: live autonomous execution, multi-chain, vault integration</li>
             </ul>
           </td>
         </tr>
