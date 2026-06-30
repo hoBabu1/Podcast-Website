@@ -20,8 +20,23 @@ const geistMono = localFont({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://defilords-podcast.vercel.app'),
   title: 'DefiLords — Learn DeFi from zero to advanced',
   description: 'Web3-gated learning platform. Master DeFi strategies from liquidity pools to AI vaults.',
+  openGraph: {
+    title: 'DefiLords — Learn DeFi from zero to advanced',
+    description: 'Web3-gated learning platform. Master DeFi strategies from liquidity pools to AI vaults.',
+    url: 'https://defilords-podcast.vercel.app',
+    siteName: 'DefiLords',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'DefiLords' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DefiLords — Learn DeFi from zero to advanced',
+    description: 'Web3-gated learning platform. Master DeFi strategies from liquidity pools to AI vaults.',
+    images: ['/og-image.png'],
+  },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
