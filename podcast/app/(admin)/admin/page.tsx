@@ -37,6 +37,12 @@ export default async function AdminPage() {
         >
           View Payments →
         </Link>
+        <Link
+          href="/admin/rewards"
+          className="rounded border border-brand-border px-5 py-2.5 text-sm font-semibold text-brand-heading hover:border-brand-amber transition-colors"
+        >
+          Rewards Tracker →
+        </Link>
       </div>
     </div>
   )

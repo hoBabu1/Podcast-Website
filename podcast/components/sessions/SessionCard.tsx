@@ -9,6 +9,7 @@ import { useSessionAccess } from '@/hooks/useSessionAccess'
 import { PaymentModal } from './PaymentModal'
 import { CurriculumModal } from './CurriculumModal'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { getRewardForSession, REWARD_DISCLAIMER } from '@/constants/rewards'
 import type { Session } from '@/constants/sessions'
 
 interface SessionCardProps {
@@ -27,6 +28,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
   const [curriculumOpen, setCurriculumOpen] = useState(false)
 
   const isLoggedIn = !!user
+  const reward = getRewardForSession(session.id)
 
   // Briefly pulse an amber border when this card is the one the user was locked
   // out of, then settle back to the normal border.
@@ -61,6 +63,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
             >
               View Curriculum →
             </button>
+            {reward && <RewardBlurb amount={reward.sponsoredAmount} />}
           </div>
           <Link
             href={`/sessions/${session.id}`}
@@ -168,6 +171,7 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
           >
             View Curriculum →
           </button>
+          {reward && <RewardBlurb amount={reward.sponsoredAmount} />}
         </div>
 
         <div className="mt-auto flex flex-col gap-2">
@@ -194,6 +198,28 @@ export function SessionCard({ session, index, isLocked = false }: SessionCardPro
         onClose={() => setCurriculumOpen(false)}
       />
     </>
+  )
+}
+
+function RewardBlurb({ amount }: { amount: number }) {
+  return (
+    <div className="rounded-lg border border-brand-amberDark bg-brand-amberDeep px-3 py-2.5 flex items-center gap-2">
+      <p className="text-brand-amber text-sm font-semibold">
+        🏆 Win a sponsored ${amount} DefiLords vault position
+      </p>
+      <span className="relative inline-flex group shrink-0">
+        <button
+          type="button"
+          aria-label="How this reward works"
+          className="w-4 h-4 flex items-center justify-center rounded-full border border-brand-amberDark text-brand-amber text-[10px] font-bold leading-none cursor-help"
+        >
+          !
+        </button>
+        <span className="pointer-events-none absolute left-1/2 bottom-full z-10 mb-2 w-56 -translate-x-1/2 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-xs leading-snug text-brand-body opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+          {REWARD_DISCLAIMER}
+        </span>
+      </span>
+    </div>
   )
 }
 

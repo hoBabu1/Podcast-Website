@@ -112,6 +112,14 @@ export function MobileNav({ isLoggedIn, isOwner, name, email }: MobileNavProps) 
             >
               AI Vaults
             </Link>
+            <Link
+              href="/rewards"
+              onClick={() => setOpen(false)}
+              role="menuitem"
+              className="flex min-h-[48px] items-center px-5 text-base text-brand-body hover:bg-brand-surface hover:text-brand-heading transition-colors"
+            >
+              Rewards
+            </Link>
             {isLoggedIn && isOwner && (
               <Link
                 href="/admin"

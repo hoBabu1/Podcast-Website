@@ -8,6 +8,50 @@ Rules:
 
 ---
 
+## M006 — 2026-07-10 — reward_positions table
+
+**Status:** ✅ applied 2026-07-10
+
+```sql
+-- ============================================================
+-- M006 — reward_positions table
+-- DefiLords Podcast — 2026-07-10
+-- Paste into Supabase SQL Editor and run in one click.
+-- ============================================================
+
+create table public.reward_positions (
+  id                uuid          primary key default gen_random_uuid(),
+  session_id        int           not null check (session_id in (1, 2, 3)),
+  winner_label      text          not null,
+  vault_name        text          not null,
+  sponsored_amount  numeric(20,2) not null,
+  start_date        date          not null,
+  end_date          date          not null,
+  current_yield     numeric(20,2) not null default 0,
+  status            text          not null default 'active'
+                      check (status in ('active', 'completed', 'paid')),
+  created_at        timestamptz   not null default now(),
+  updated_at        timestamptz   not null default now()
+);
+
+alter table public.reward_positions enable row level security;
+
+-- no user/anon policies — service role only (reads go through /api/rewards,
+-- writes go through /api/admin/rewards, both server-side with the service key)
+
+create index idx_reward_positions_session_id
+  on public.reward_positions (session_id);
+
+create trigger set_reward_positions_updated_at
+  before update on public.reward_positions
+  for each row
+  execute function public.set_updated_at();
+
+-- ============================================================
+```
+
+---
+
 ## M005 — 2026-06-16 — chain_id default to Base mainnet
 
 **Status:** ✅ applied 2026-06-16

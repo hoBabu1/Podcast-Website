@@ -159,6 +159,41 @@ Links wallet addresses to users. A user can have multiple wallets. Used to recor
 
 ---
 
+### `reward_positions`
+
+Manually curated rows for the public Rewards Tracker. Each row represents one live or completed sponsored vault position — one winner per Academy session. There is no automated reward system: an owner creates/edits/deletes rows from `/admin/rewards`, and the public `/rewards` page reads them read-only.
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | `uuid` | Primary key, default `gen_random_uuid()` |
+| `session_id` | `int` | Not null, check: `session_id IN (1, 2, 3)` |
+| `winner_label` | `text` | Not null — winner name or wallet address, as the owner wants it displayed |
+| `vault_name` | `text` | Not null — which DefiLords vault the position runs in |
+| `sponsored_amount` | `numeric(20, 2)` | Not null — sponsored principal in USD (DefiLords capital, not paid to the winner) |
+| `start_date` | `date` | Not null |
+| `end_date` | `date` | Not null — normally `start_date` + 14 days |
+| `current_yield` | `numeric(20, 2)` | Not null, default `0` — harvest/yield generated so far, in USD |
+| `status` | `text` | Not null, default `'active'`, check `in ('active', 'completed', 'paid')` |
+| `created_at` | `timestamptz` | Default `now()`, not null |
+| `updated_at` | `timestamptz` | Default `now()`, not null — auto-updated via trigger |
+
+**Indexes:**
+- Primary key on `id`
+- Index on `session_id`
+
+**RLS policies:**
+
+| Operation | Who | Condition |
+|-----------|-----|-----------|
+| SELECT | Service role only | Public reads go through `/api/rewards`, which uses the service-role client server-side — the table itself has no anon-facing policy |
+| INSERT | Service role only | Via `/api/admin/rewards` (owner only) |
+| UPDATE | Service role only | Via `/api/admin/rewards/[id]` (owner only) |
+| DELETE | Service role only | Via `/api/admin/rewards/[id]` (owner only) |
+
+**Trigger:** `updated_at` is automatically set to `now()` on every UPDATE via the shared `set_updated_at` trigger function.
+
+---
+
 ## Supabase clients
 
 Two clients are used throughout the project. They are never interchangeable.

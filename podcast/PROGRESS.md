@@ -4,6 +4,42 @@
 
 ---
 
+## Session Rewards — revision: tooltip instead of repeated disclaimer — 2026-07-10
+
+### What changed
+- **`components/sessions/SessionCard.tsx`** — `RewardBlurb` no longer prints the full yield/principal disclaimer text on every session card. It now shows just the "Win a sponsored $X vault position" line plus a small "!" circle icon; hovering (or focusing, for keyboard/touch) the icon reveals the same wording in a tooltip. Removes the repetition across all 3 cards while keeping the disclosure one interaction away.
+- **`components/rewards/HowRewardsWork.tsx`** — moved off the homepage. It's no longer imported in `app/page.tsx`; it now renders only on `app/rewards/page.tsx`, below the reward position cards. Its self-referential "View the Rewards Tracker →" link was removed since the section now already lives on that page.
+
+### Decisions made
+- Tooltip content reuses the same `REWARD_DISCLAIMER` string from `constants/rewards.ts` — still one source of truth, just displayed on demand instead of always-on.
+
+---
+
+## Session Rewards — sponsored vault positions + public Rewards Tracker — 2026-07-10
+
+### What was completed
+- **Session card copy** — `components/sessions/SessionCard.tsx` now renders a `RewardBlurb` under each session's description ("Win a sponsored $X DefiLords vault position" + the 14-day yield-only disclaimer). Reward amounts ($50 / $100 / $150 for sessions 1/2/3) live in `constants/rewards.ts`, separate from `constants/sessions.ts` since the sponsored amount doesn't match the session's own price.
+- **"How the rewards work" section** — `components/rewards/HowRewardsWork.tsx`, added to the homepage (`app/page.tsx`) below the sessions grid. Explains the random winner selection, 14-day tracked position, and that principal stays with DefiLords.
+- **Public Rewards Tracker** — new page `app/rewards/page.tsx`, linked from the navbar (desktop `Navbar.tsx` + mobile `MobileNav.tsx`) and from the homepage section. Server Component reading `getRewardPositions()` directly (same pattern as admin pages) and rendering `RewardPositionCard` + `RewardStatusBadge`.
+- **`reward_positions` table** — added to `database/SCHEMA.md` and `database/MIGRATIONS.md` as **M006** (not yet applied — needs to be run in Supabase SQL Editor). RLS enabled with no anon-facing policies; all reads/writes go through the service-role client from server code only, matching `user_roles`.
+- **Query layer** — `lib/rewards/queries.ts` (`getRewardPositions`, `getRewardPositionById`, `createRewardPosition`, `updateRewardPosition`, `deleteRewardPosition`), typed via `types/rewards.ts`.
+- **Public API** — `GET /api/rewards`, rate-limited per-IP (30 req/min) via a new lightweight in-memory limiter (`lib/rateLimit.ts`) since this is the first fully public, unauthenticated read endpoint in the app.
+- **Admin CRUD** — `GET /api/admin/rewards`, `POST /api/admin/rewards`, `PATCH /api/admin/rewards/[id]`, `DELETE /api/admin/rewards/[id]`, all owner-gated (`checkOwnerRole`) and Zod-validated. Admin UI at `/admin/rewards` (`app/(admin)/admin/rewards/page.tsx`) with `RewardsAdminTable` (list + edit/delete) and `RewardForm` (create/edit modal), linked from the owner dashboard.
+- Tests: `lib/rewards/queries.test.ts`, `app/api/rewards/route.test.ts`, `app/api/admin/rewards/route.test.ts`, `app/api/admin/rewards/[id]/route.test.ts`.
+
+### Decisions made
+- **Full CRUD, not 3 fixed rows** — an owner can add/edit/delete any number of reward positions, so a repeated session (future cohort) can have its own history instead of overwriting a single fixed row per session number.
+- **New Supabase table over static JSON** — Vercel's filesystem is read-only/ephemeral at runtime, so a JSON file edited via the admin UI would not persist. A DB table follows the existing pattern exactly (service-role writes, RLS locked down, no client-side Supabase calls).
+- **Rewards Tracker is its own page (`/rewards`)**, not a homepage section — keeps the homepage focused on getting people registered for sessions.
+
+### New env vars introduced
+None.
+
+### What next
+**M006 applied 2026-07-10.** `/admin/rewards` and `/rewards` are ready to use — add reward positions from the admin panel.
+
+---
+
 ## X (Twitter) Ads — all 3 conversion events (Page View, Connected Wallet, Sign Up) — 2026-06-26
 
 ### What was completed

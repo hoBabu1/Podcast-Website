@@ -48,6 +48,12 @@ export async function Navbar() {
           >
             AI Vaults
           </Link>
+          <Link
+            href="/rewards"
+            className="text-brand-body hover:text-brand-heading text-base transition-colors"
+          >
+            Rewards
+          </Link>
 
           <WalletButton />
 

@@ -5,6 +5,30 @@ If you are new to the backend or just vibe-coding along, this is your guide to u
 
 ---
 
+## Session Rewards — sponsored vault positions + Rewards Tracker
+
+### What was built
+
+Each of the 3 Academy sessions now has an attached reward: after the session, DefiLords picks one winner and opens a real (live) vault position funded with DefiLords' own money — $50 for Session 1, $100 for Session 2, $150 for Session 3. That position runs for 14 days. At the end, only the **yield/harvest** the position earned goes to the winner's wallet — the original $50/$100/$150 (the "principal") always stays with DefiLords. Each session card shows a short reward line with a hover/tap "!" icon that reveals the full disclaimer, there's a "How it works" explainer on the `/rewards` page, and that same public page lists every reward position DefiLords has ever run (or is currently running), which an owner updates by hand from `/admin/rewards`.
+
+### Why "principal" and "yield" are different things, and why the wording matters
+
+Think of the $100 as a loan of *capital*, not a prize. DefiLords deposits that $100 into one of its own vaults (a DeFi strategy that earns interest/rewards over time — the "yield"). Over 14 days that $100 might earn, say, $4 of yield. The winner receives that $4 — not the $100. The $100 goes back to DefiLords when the position closes. If the copy ever said "win $100" without qualifying it, a winner could reasonably expect $100 in their wallet, which is wrong and could cause a dispute. That's why the same `REWARD_DISCLAIMER` string from `constants/rewards.ts` is reused everywhere this shows up (the session-card tooltip, the `/rewards` explainer, the tracker cards) rather than each place inventing its own wording — one source of truth, even though on the session cards it's now tucked behind a hover icon instead of printed inline (repeating the full sentence on all 3 cards was cluttering the cards).
+
+### Why reward amounts live in a separate constants file from session prices
+
+`constants/sessions.ts` already has a `price` field per session — but that's what a *user* pays DefiLords to unlock the session (Session 2 is $50 to attend, Session 3 is $100 to attend). The reward amounts ($50 / $100 / $150) are a completely different number that DefiLords pays *out* as sponsored capital, and they don't line up with the attendance prices. Reusing `price` for both would have been confusing and wrong the moment the numbers diverged (which they immediately do — Session 1 costs $0 to attend but has a $50 reward). So `constants/rewards.ts` is its own small static file, keyed by the same `sessionId`.
+
+### Why the Rewards Tracker needed a real database table, not just a JSON file
+
+The ask was "let admin edit values and have them stick." The obvious-looking shortcut — a JSON file the admin panel edits directly — doesn't actually work here, because this app deploys to Vercel, and Vercel's filesystem at runtime is **read-only and ephemeral**: any file written while the app is running disappears on the next deploy or even the next cold start. So instead there's a new Supabase table, `reward_positions`, and the admin panel writes to it through an API route (`/api/admin/rewards`) using the same service-role Supabase client every other write in this app uses. This is exactly the same pattern as `session_access` or `user_wallets` — nothing new conceptually, just applied to a new kind of row.
+
+### Why the public rewards read endpoint needed its own rate limiter
+
+Every other API route that checks *who* is calling — OTP send, payment verify — already has some form of rate limiting baked into its own logic (e.g. counting rows in `otp_codes`). `GET /api/rewards` is the first route in the app that answers *anyone*, logged in or not, no session cookie required. CLAUDE.md's hard rule is "rate-limit all public endpoints," so a tiny in-memory limiter (`lib/rateLimit.ts`) was added: it just remembers timestamps of recent requests per IP address in memory and rejects with a 429 once a caller goes over 30 requests/minute. It resets whenever the server process restarts and doesn't share state across multiple server instances — that's a known, accepted limitation for a low-value public read (nothing money-related is exposed or spent through this endpoint), not a security boundary the way OTP or payment verification are.
+
+---
+
 ## USDT as a Second Payment Option (Multi-Token Support)
 
 ### What was built
