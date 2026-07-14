@@ -5,7 +5,7 @@ export const SESSIONS = [
     price: 0,
     isFree: true,
     description: 'Blockchain basics, wallets, and how DeFi actually works. No experience needed. We\'ll send you the live session link before the day.',
-    twitterUrl: 'https://x.com/defilordsss',
+    twitterUrl: 'https://x.com/defilordsss?s=21',
     priceUSDC: null,
   },
   {
@@ -14,7 +14,7 @@ export const SESSIONS = [
     price: 50,
     isFree: false,
     description: 'Everything you need to start earning on your crypto — without gambling it away.',
-    twitterUrl: 'https://x.com/defilordsss',
+    twitterUrl: 'https://x.com/defilordsss?s=21',
     priceUSDC: '50000000000000000000',
   },
   {
@@ -23,7 +23,7 @@ export const SESSIONS = [
     price: 100,
     isFree: false,
     description: 'Build a passive income DeFi portfolio using advanced capital strategies and AI-driven automation.',
-    twitterUrl: 'https://x.com/defilordsss',
+    twitterUrl: 'https://x.com/defilordsss?s=21',
     priceUSDC: '100000000000000000000',
   },
 ] as const

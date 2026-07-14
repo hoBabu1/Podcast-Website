@@ -141,8 +141,8 @@ export const WELCOME_EMAIL_BODY = (name: string) => `<table width="100%" cellpad
         <tr>
           <td style="border-top:1px solid #242420; padding-top:20px;">
             <p style="font-size:12px; color:#555555; margin:0 0 8px;">Stay Connected</p>
-            <a href="https://x.com/defilordsss" style="color:#a89878; font-size:13px; text-decoration:none; margin-right:16px;">𝕏 Twitter</a>
-            <a href="https://t.me/defilords" style="color:#a89878; font-size:13px; text-decoration:none; margin-right:16px;">Telegram</a>
+            <a href="https://x.com/defilordsss?s=21" style="color:#a89878; font-size:13px; text-decoration:none; margin-right:16px;">𝕏 Twitter</a>
+            <a href="https://t.me/defilordss" style="color:#a89878; font-size:13px; text-decoration:none; margin-right:16px;">Telegram</a>
             <a href="https://discord.gg/defilords" style="color:#a89878; font-size:13px; text-decoration:none;">Discord</a>
           </td>
         </tr>

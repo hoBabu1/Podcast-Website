@@ -79,7 +79,7 @@ export function VideoPlayer({ sessionId, userEmail }: VideoPlayerProps) {
           Being recorded. Check back or follow us on Twitter.
         </p>
         <a
-          href="https://twitter.com/defilordsss"
+          href="https://x.com/defilordsss?s=21"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-1 text-brand-amber text-sm font-medium hover:text-brand-amberDark transition-colors"
