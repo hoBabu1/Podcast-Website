@@ -28,6 +28,10 @@ export function SpaceBanner() {
           Join our live Space to enter.
         </p>
 
+        <p className="mt-3 flex items-center gap-1.5 text-sm font-bold border-t border-brand-bg/20 pt-3">
+          <span aria-hidden="true">📅</span> 23 Jul · 4:00 PM UTC
+        </p>
+
         <span className="mt-3 inline-block text-sm font-bold underline underline-offset-4">
           Listen now →
         </span>
