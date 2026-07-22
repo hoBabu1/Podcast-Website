@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
+import { SpaceBanner } from '@/components/layout/SpaceBanner'
 import { SessionCard } from '@/components/sessions/SessionCard'
 import { DevSection } from '@/components/layout/DevSection'
 import { LockedScroller } from '@/components/sessions/LockedScroller'
@@ -21,6 +22,7 @@ export default function HomePage({
   return (
     <div className="min-h-screen flex flex-col">
       {lockedId && <LockedScroller targetId="sessions" />}
+      <SpaceBanner />
       <Navbar />
 
       <main className="flex-1">
