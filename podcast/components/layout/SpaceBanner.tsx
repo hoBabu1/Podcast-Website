@@ -1,4 +1,4 @@
-const SPACE_URL = 'https://twitter.com/i/spaces/1nJOLLZvRoExR'
+const SPACE_URL = 'https://twitter.com/i/spaces/1qJVmmBlmqpGB'
 
 export function SpaceBanner() {
   return (
